@@ -1,0 +1,43 @@
+Task 1
+One important note: When writing methods that return multiple employees, make sure they’re always in ascending order of their IDs.
+
+Organization.get_employee(id) C
+Organization.get_next_free_id() C
+Organization.add_employee(new_employee) C
+Organization.add_employee(new_employee, superior_id) C
+Organization.get_employees_with_position(position_as_str) C
+Organization.get_average_salary() C
+Organization.get_average_salary(position_as_str) C
+
+Employee.get_superior()
+Employee.get_all_subordinates() -> List[Employee]
+Employee(eid, name, position, salary, rating)
+Employee.get_direct_subordinates()
+Employee.get_higher_paid_employees() -> List[Employee]
+Employee.get_organization_head() -> Employee
+Employee.get_closest_common_superior(eid_as_int) -> Employee
+
+
+Task 2
+Leader.get_department_name()
+Leader.get_department_employees()
+
+Employee.get_position_in_hierarchy()
+
+Task 3
+Employee.change_department_leader()
+Employee.become_leader(department_name)?!?!?!
+
+Leader.become_leader(department_name)?!?!?!
+Leader.become_employee()
+
+Organization.set_head()
+
+Task 4
+Organization.fire_employee(id)
+Organization.fire_lowest_rated_employee()
+Organization.fire_under_rating(rating)
+Organization.promote_employee(eid)
+
+Employee.obtain_subordinates(list)
+

@@ -351,7 +351,7 @@ class OrganizationSimulator:
             self.current_organization.get_employee(self.current_employee.eid)
 
     # === TASK 5 ===
-    # TODO: Implement create_department_salary_tree in organization_hierarchy.py
+    # Implement create_department_salary_tree in organization_hierarchy.py
     def get_department_salary_tree(self) -> DepartmentSalaryTree:
         """Return the DepartmentSalaryTree that corresponds to
         self.current_organization.
@@ -359,7 +359,7 @@ class OrganizationSimulator:
         return create_department_salary_tree(self.current_organization)
 
     # === TASK 6 ===
-    # TODO: Implement create_organization_from_file in organization_hierarchy.py
+    # Implement create_organization_from_file in organization_hierarchy.py
     def file_to_organization(self, filename: str) -> None:
         """Read the organization data in the file named filename, creating an
         organization from it and setting it as self.current_organization.

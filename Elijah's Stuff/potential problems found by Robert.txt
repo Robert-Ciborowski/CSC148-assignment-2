@@ -1,0 +1,3 @@
+get_all_subordinates() sorts by object id, not by eid
+get_employees_paid_more_than() sorts by object id, not by eid
+My code seems to have more doctests complete

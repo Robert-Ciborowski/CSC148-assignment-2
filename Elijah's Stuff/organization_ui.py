@@ -316,7 +316,7 @@ def obtain_subordinates_button(result: Optional[str] = None) -> None:
     subordinates of the current employee.
     """
     if not result:
-        instruction = ("Enter the IDs of the employees to tak e as " +
+        instruction = ("Enter the IDs of the employees to take as " +
                        "subordinates. The IDs must be separated by commas.")
         button_label = "Obtain Subordinates"
         create_single_prompt_window(instruction, button_label,

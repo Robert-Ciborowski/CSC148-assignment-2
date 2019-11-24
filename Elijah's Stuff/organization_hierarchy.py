@@ -24,7 +24,7 @@ from __future__ import annotations
 from typing import List, Optional, Union, TextIO
 
 
-# TODO: === TASK 1 ===
+# === TASK 1 ===
 # Complete the merge() function and the Employee and Organization classes
 # according to their docstrings.
 # Go through client_code.py to find additional methods that you must
@@ -46,38 +46,28 @@ def merge(lst1: list, lst2: list) -> list:
     >>> merge([1, 2, 5], [3, 4, 6])
     [1, 2, 3, 4, 5, 6]
     """
-    return_list = []
-
-    if len(lst1) == 0:
-        return_list.extend(lst2)
-        return return_list
-
-    if len(lst2) == 0:
-        return_list.extend(lst1)
-        return return_list
-
-    i = 0
-    j = 0
-    length_lst1 = len(lst1)
-    length_lst2 = len(lst2)
-
-    while i < length_lst1 or j < length_lst2:
-        if i == length_lst1:
-            return_list.extend(lst2[j:])
-            break
-
-        if j == length_lst2:
-            return_list.extend(lst1[i:])
-            break
-
-        if lst1[i] < lst2[j]:
-            return_list.append(lst1[i])
-            i += 1
-        else:
-            return_list.append(lst2[j])
-            j += 1
-
-    return return_list
+    # note, we are merging employees, so assume no duplicates (no equality)
+    lst1_copy = []
+    for e in lst1:
+        lst1_copy.append(e)
+    lst2_copy = []
+    for e in lst2:
+        lst2_copy.append(e)
+    ans = []
+    while lst1_copy != []:
+        if lst2_copy == []:
+            ans.append(lst1_copy.pop(0))
+        while lst2_copy != []:
+            if lst1_copy == []:
+                ans.append(lst2_copy.pop(0))
+                continue
+            if lst1_copy[0] < lst2_copy[0]:
+                ans.append(lst1_copy.pop(0))
+            else:
+                ans.append(lst2_copy.pop(0))
+    while lst2_copy != []:
+        ans.append(lst2_copy.pop(0))
+    return ans
 
 
 class Employee:
@@ -147,9 +137,6 @@ class Employee:
         >>> e1 < e2
         True
         """
-        # TODO Task 1: Complete the __lt__ method. Do we need to check
-        #  if other is an employee if its already mentioned in the type
-        #  contract?
         return self.eid < other.eid
 
     def get_direct_subordinates(self) -> List[Employee]:
@@ -162,10 +149,21 @@ class Employee:
         >>> e2.get_direct_subordinates()[0].name
         'Emma Ployee'
         """
-        # TODO: WE ARE ASSUMING THAT _SUBORDINATES IS IN ORDER
-        return_list = []
-        return_list.extend(self._subordinates)
-        return return_list
+        if self._subordinates == []:
+            return []
+        subs = []
+        subs.append(self._subordinates[0])
+        for sub in self._subordinates[1:]:
+            if sub < subs[0]:
+                subs.insert(0, sub)
+            else:
+                for i in range(len(subs)):
+                    if i == len(subs) - 1:
+                        subs.append(sub)
+                        continue
+                    if sub < subs[i + 1]:
+                        subs.insert(i, sub)
+        return subs
 
     def get_all_subordinates(self) -> List[Employee]:
         """Return a list of all of the subordinates of this Employee in order of
@@ -181,34 +179,14 @@ class Employee:
         >>> e3.get_all_subordinates()[1].name
         'Sue Perior'
         """
-        # TODO Task 1: Complete the get_all_subordinates method.
-        if len(self._subordinates) == 0:
+        ans = []
+        if self._subordinates == []:
             return []
-
-        subordinate_dict = {}
-        subordinate_ids = []
-
-        for subordinate in self._subordinates:
-            # Note that self._subordinates is already in order of IDs.
-            subordinate_dict[subordinate.eid] = subordinate
-            subordinate_ids.append(subordinate.eid)
-
-        for subordinate in self._subordinates:
-            subordinates = subordinate.get_all_subordinates()
-            id_list = []
-
-            for subordinate_2 in subordinates:
-                subordinate_dict[subordinate_2.eid] = subordinate_2
-                id_list.append(subordinate_2.eid)
-
-            subordinate_ids = merge(subordinate_ids, id_list)
-
-        subordinate_list = []
-
-        for eid in subordinate_ids:
-            subordinate_list.append(subordinate_dict[eid])
-
-        return subordinate_list
+        else:
+            for sub in self._subordinates:
+                ans = merge(ans, [sub])
+                ans = merge(ans, sub.get_all_subordinates())
+        return ans
 
     def get_organization_head(self) -> Employee:
         """Return the head of the organization.
@@ -221,15 +199,9 @@ class Employee:
         >>> e1.get_organization_head().name
         'Bigg Boss'
         """
-        top_employee = self._superior
-
-        if top_employee is None:
-            top_employee = self
-        else:
-            while top_employee._superior is not None:
-                top_employee = top_employee._superior
-
-        return top_employee
+        if self._superior is None:
+            return self
+        return self._superior.get_organization_head()
 
     def get_superior(self) -> Optional[Employee]:
         """Returns the superior of this Employee or None if no superior exists.
@@ -267,9 +239,7 @@ class Employee:
         """
         if self._superior is not None:
             self._superior.remove_subordinate_id(self.eid)
-
         self._superior = superior
-
         if superior is not None:
             superior.add_subordinate(self)
 
@@ -292,12 +262,9 @@ class Employee:
         >>> e1.get_superior() is e2
         True
         """
-        count = 0
-        for subordinate in self._subordinates:
-            if subordinate.eid == eid:
-                self._subordinates.pop(count)
-                return
-            count += 1
+        for sub in self.get_direct_subordinates():
+            if sub.eid == eid:
+                self._subordinates.pop(self._subordinates.index(sub))
 
     def add_subordinate(self, subordinate: Employee) -> None:
         """Add <subordinate> to this Employee's list of direct subordinates.
@@ -312,13 +279,6 @@ class Employee:
         >>> e1.get_superior() is None
         True
         """
-        for i in range(len(self._subordinates)):
-            subordinate_2 = self._subordinates[i]
-
-            if subordinate_2.eid > subordinate.eid:
-                self._subordinates.insert(i, subordinate)
-                return
-
         self._subordinates.append(subordinate)
 
     def get_employee(self, eid: int) -> Optional[Employee]:
@@ -339,16 +299,12 @@ class Employee:
         """
         if self.eid == eid:
             return self
-
-        for subordinate in self._subordinates:
-            if subordinate.eid == eid:
-                return subordinate
-
-            employee = subordinate.get_employee(eid)
-
-            if employee is not None:
-                return employee
-
+        if self._subordinates == []:
+            return None
+        for sub in self._subordinates:
+            e = sub.get_employee(eid)
+            if e is not None:
+                return e
         return None
 
     def get_employees_paid_more_than(self, amount: float) -> List[Employee]:
@@ -371,32 +327,16 @@ class Employee:
         >>> more_than_10000[1].name
         'Bigg Boss'
         """
-        # TODO Task 1: Complete the get_employees_paid_more_than method.
-        employee_dict = {}
-        employee_ids = []
-
+        ans = []
         if self.salary > amount:
-            employee_ids.append(self.eid)
-            employee_dict[self.eid] = self
+            ans.append(self)
+        if self._subordinates == []:
+            return ans
+        for sub in self._subordinates:
+            ans = merge(ans, sub.get_employees_paid_more_than(amount))
+        return ans
 
-        for subordinate in self._subordinates:
-            sub_employees = subordinate.get_employees_paid_more_than(amount)
-            sub_ids = []
-
-            for employee in sub_employees:
-                employee_dict[employee.eid] = employee
-                sub_ids.append(employee.eid)
-
-            employee_ids = merge(employee_ids, sub_ids)
-
-        return_list = []
-
-        for eid in employee_ids:
-            return_list.append(employee_dict[eid])
-
-        return return_list
-
-    # TODO: Go through client_code.py for additional methods you need to
+    # Go through client_code.py for additional methods you need to
     #       implement in Task 1. Write their headers and bodies below.
 
     def get_higher_paid_employees(self) -> List[Employee]:
@@ -420,30 +360,47 @@ class Employee:
             .get_employees_paid_more_than(self.salary)
 
     def get_closest_common_superior(self, eid: int) -> Employee:
-        """Get the common superior to this employee and the employee with
-        the given id. If one of the employees is a direct or indirect
-        subordinate of the other, the superior employee is the closest common
-        superior.
+        """ Docstring """
+        # test
+        self_sups = self._get_sups()
+        other_sups = self.get_organization_head().get_employee(eid)._get_sups()
+        if len(self_sups) == 1:
+            return self_sups[0]
+        if len(other_sups) == 1:
+            return other_sups[0]
+        i = 1
+        while self_sups[-i] == other_sups[-i]:
+            i += 1
+        return self_sups[-i + 1]
 
-        Precondition: <eid> exists in the organization.
+    def _get_sups(self) -> List:
+        """ Docstring """
+        val = [self]
+        current = self.get_superior()
+        while current is not None:
+            val.append(current)
+            current = current.get_superior()
+        return val
+
+    def get_higher_paid_employees(self) -> List[Employee]:
+        """Get all employees of the organization that have a salary higher than
+        this employee's salary.
+
+        Employees must be returned in increasing order of eid.
 
         >>> e1 = Employee(1, "Emma Ployee", "Worker", 10000, 50)
         >>> e2 = Employee(2, "Sue Perior", "Manager", 20000, 30)
         >>> e3 = Employee(3, "Bigg Boss", "CEO", 50000, 60)
-        >>> e1.become_subordinate(e3)
+        >>> e1.become_subordinate(e2)
         >>> e2.become_subordinate(e3)
-        >>> superior = e1.get_closest_common_superior(3)
-        >>> superior.eid
-        3
+        >>> more_than = e2.get_higher_paid_employees()
+        >>> len(more_than) == 1
+        True
+        >>> more_than[0].name
+        'Bigg Boss'
         """
-        if self.eid == eid or self.get_employee(eid) is not None:
-            return self
-
-        # The line commented out below cannot happen if eid exists in the
-        # organization:
-        # if self._superior is None:
-
-        return self._superior.get_closest_common_superior(eid)
+        return self.get_organization_head() \
+            .get_employees_paid_more_than(self.salary)
 
     # === TASK 2 ===
     def get_department_name(self) -> str:
@@ -458,18 +415,12 @@ class Employee:
         >>> e1.get_department_name()
         'Department'
         """
-        # TODO Task 2: Complete the get_department_name method.
         if isinstance(self, Leader):
-            return self.get_department_name()
-
-        superior = self._superior
-
-        while superior is not None:
-            if isinstance(superior, Leader):
-                return superior.get_department_name()
-            superior = superior.get_superior()
-
-        return ""
+            return self._department_name
+        elif self.get_superior() is not None:
+            return self.get_superior().get_department_name()
+        else:
+            return ''
 
     def get_position_in_hierarchy(self) -> str:
         """Returns a string that describes the Employee's position in the
@@ -489,18 +440,22 @@ class Employee:
         >>> e3.get_position_in_hierarchy()
         'CEO, Company'
         """
-        return_string = self.position
-        superior = self._superior
+        sups = self._get_sups()
+        positions = [self.position]
+        for p in sups:
+            d = p.get_department_name()
+            # note: this is okay because department names are unique
+            if d and d not in positions:
+                positions.append(d)
+        string = ''
+        for s in positions:
+            if s != positions[-1]:
+                string += s + ', '
+            else:
+                string += s
+        return string
 
-        while superior is not None:
-            if isinstance(superior, Leader):
-                return_string += ', ' + superior.get_department_name()
-
-            superior = superior._superior
-
-        return return_string
-
-    # TODO: Go through client_code.py for additional methods you need to
+    # Go through client_code.py for additional methods you need to
     #       implement in Task 2.
 
     # === TASK 3 ===
@@ -524,63 +479,72 @@ class Employee:
         >>> e2.get_department_leader().name
         'Sue Perior'
         """
+        curr = self
+        while (not isinstance(curr, Leader)) and (curr is not None):
+            curr = self.get_superior()
+        return curr
+
+    def change_department_leader(self) -> Optional[Leader]:
+        """ Docstring """
+        # TODO: test
+        # I am going to mutate the current dept leader, hereafter called prev
+        # leader (p in code), to have the attributes of self,
+        # and create a new Employee
+        # with the attributes of prev leader
+        # this is to avoid trying to cast self into a new type (Leader)
+        # note: self will still refer to an Employee, not a leader
+        # but this is okay because client code updates current displayed to
+        # match the old self.eid (so it will find the mutated Leader)
+
+        # is it okay to keep salary, position, rating, the same?
         if isinstance(self, Leader):
-            return self
+            return None
+        if self.get_department_name() == '':
+            return None
 
-        superior = self._superior
+        p = self.get_department_leader()
+        new_sub = Employee(p.eid, p.name, p.position, p.salary, p.rating)
+        new_sub.become_subordinate(self)
+        new_sub._add_subs(p.get_direct_subordinates())
+        # I think this is unnecessary because become_sub should remove current
+        # superior
+        # p._remove_subs()
+        p._add_subs(self.get_direct_subordinates())
+        p.eid, p.position, p.name, p.salary, p.rating = self.eid, self.name, \
+                                                        self.position, self.salary, self.rating
+        # note: this doesn't remove the sup as a sup of self, but we should
+        # lose reference to self after this, so it should be okay
 
-        while superior is not None:
-            if isinstance(superior, Leader):
-                return superior
-            superior = superior.get_superior()
+        # given that my setup didn't require me to return anything, I may have
+        # implemented this wrong
+        self.get_superior().remove_subordinate_id(self.eid)
+        return p
 
-        return None
+    def _add_subs(self, subs: [Employee]) -> None:
+        """ Docstring """
+        for sub in subs:
+            sub.become_subordinate(self)
 
-    # TODO: Go through client_code.py for additional methods you need to
+    # def _remove_subs(self) -> None:
+    #     for sub in self.get_direct_subordinates():
+    #         self.remove_subordinate_id(sub.eid)
+
+    def become_leader(self, department_name: str) -> Leader:
+        """ Docstring """
+        # TODO: test
+        # can clean up by moving shared code with take over to helper
+        new_lead = Leader(self.eid, self.name, self.position, self.salary,
+                          self.rating, department_name)
+        p = self.get_department_leader()
+        new_sub = Employee(p.eid, p.name, p.position, p.salary, p.rating)
+        new_sub.become_subordinate(self)
+        new_sub._add_subs(p.get_direct_subordinates())
+        new_lead._add_subs(self.get_direct_subordinates())
+        self.get_superior().remove_subordinate_id(self.eid)
+        return new_lead
+
+    # Go through client_code.py for additional methods you need to
     #       implement in Task 3.
-
-    def change_department_leader(self) -> Employee:
-        """Changes the leader of this organization's department to this
-        employee. The old leader becomes a direct subordinate of this employee.
-        If the old leader was a subordinate of another employee, they get
-        swapped out for this employee. This employee is returned.
-
-        If this employee is the leader of its own department, nothing happens.
-
-        >>> e1 = Leader(1, "Sarah", "CEO", 500000, 30, "Some Corp.")
-        >>> e2 = Employee(3, "Sandra", "Secretary", 20000, 30)
-        >>> e3 = Employee(3, "Sofia", "Manager", 25000, 30)
-        >>> e4 = Employee(4, "Senya", "Grunt", 5000, 30)
-        >>> e5 = Employee(5, "Sylvia", "Grunt", 5000, 30)
-        >>> e2.become_subordinate(e1)
-        >>> e3.become_subordinate(e1)
-        >>> e4.become_subordinate(e3)
-        >>> e5.become_subordinate(e3)
-        >>> new_head = e3.change_department_leader()
-        >>> new_head.name
-        'Sofia'
-        >>> subordinates = new_head.get_direct_subordinates()
-        >>> len(subordinates)
-        3
-        """
-        leader = self.get_department_leader()
-
-        if leader is None or leader == self:
-            return self
-
-        old_leader_superior = leader.get_superior()
-
-        if self._superior is not None:
-            self._superior.remove_subordinate_id(self.eid)
-
-        if old_leader_superior is not None:
-            old_leader_superior.remove_subordinate_id(leader.eid)
-            self.become_subordinate(old_leader_superior)
-        else:
-            self._superior = None
-
-        leader.become_subordinate(self)
-        return self
 
     def become_leader(self, department_name: str) -> Leader:
         """Creates a Leader version of this employee and replaces this employee
@@ -627,16 +591,13 @@ class Employee:
         >>> e3.get_highest_rated_subordinate().name
         'Emma Ployee'
         """
-        # TODO Task 4: Complete the get_highest_rated_subordinate method.
-        highest_rating = -1
-        employee = None
-
-        for subordinate in self.get_direct_subordinates():
-            if subordinate.rating > highest_rating:
-                highest_rating = subordinate.rating
-                employee = subordinate
-
-        return employee
+        highest_sub = self.get_direct_subordinates()[0]
+        highest_rating = highest_sub.rating
+        for sub in self.get_direct_subordinates():
+            if sub.rating > highest_rating:
+                highest_rating = sub.rating
+                highest_sub = sub
+        return highest_sub
 
     def swap_up(self) -> Employee:
         """Swap this Employee with their superior. Return the version of this
@@ -663,91 +624,71 @@ class Employee:
         >>> e3.get_direct_subordinates()[0] is new_e1
         True
         """
-        # TODO Task 4: Complete the swap_up method.
-        old_superior = self._superior
-        super_superior = old_superior._superior
-        old_superior.remove_subordinate_id(self.eid)
-
-        if isinstance(self, Leader):
-            new_superior = Leader(old_superior.eid, old_superior.name,
-                                  self.position, self.salary,
-                                  old_superior.rating,
-                                  self.get_department_name())
+        # TODO: test
+        sup = self.get_superior()
+        if isinstance(sup, Leader):
+            new = Leader(self.eid, self.name, sup.position, sup.salary,
+                         self.rating, sup.get_department_name())
+            sup.remove_subordinate_id(self.eid)
+            new.become_subordinate(sup.get_superior())
+            new_sub = Employee(sup.eid, sup.name, self.position, self.salary,
+                               sup.rating)
+            sup_sup = sup.get_superior()
+            if sup_sup is not None:
+                sup_sup.remove_subordinate_id(sup.eid)
+                sup_sup.add_subordinate(new_sub)
+            new_sub.become_subordinate(self)
+            new._add_subs(self.get_direct_subordinates())
+            return new
         else:
-            new_superior = Employee(old_superior.eid, old_superior.name,
-                                    self.position, self.salary,
-                                    old_superior.rating)
+            self.become_subordinate(sup.get_superior())
+            sup.become_subordinate(sup)
+            self.position, self.salary, sup.position, sup.salary = \
+                sup.position, sup.salary, self.position, self.salary
+            return self
 
-        if isinstance(old_superior, Leader):
-            new_self = Leader(self.eid, self.name,
-                              old_superior.position, old_superior.salary,
-                              self.rating,
-                              old_superior.get_department_name())
-        else:
-            new_self = Employee(self.eid, self.name,
-                                old_superior.position, old_superior.salary,
-                                self.rating)
+    # Go through client_code.py for additional methods you need to
+    #       implement in Task 4.
 
-        # This creates a copy of the subordinate lists.
-        old_superior_subordinates = []
-        old_self_subordinates = []
-
-        for subordinate in old_superior.get_direct_subordinates():
-            old_superior_subordinates.append(subordinate)
-
-        for subordinate in self.get_direct_subordinates():
-            old_self_subordinates.append(subordinate)
-
-        # This swaps the subordinates.
-        for subordinate in old_superior_subordinates:
-            subordinate.become_subordinate(new_self)
-
-        for subordinate in old_self_subordinates:
-            subordinate.become_subordinate(new_superior)
-
-        if super_superior is not None:
-            super_superior.remove_subordinate_id(old_superior.eid)
-            new_self.become_subordinate(super_superior)
-
-        new_superior.become_subordinate(new_self)
-        return new_self
-
-    def obtain_subordinates(self, ids: List[int]) -> Employee:
-        """Set the employees with IDs in ids as subordinates of
-        self. Returns the new organization head.
-
-        If those employees have subordinates, the superior of those subordinates
-        becomes the employee's original superior.
-
-        If the head of an organization is taken as a subordinate, then the
-        highest-rated direct subordinate of the head (i.e. the one with the
-        largest ‘rating’ value: if multiple subordinates have the same
-        rating, then the lowest eid is used) becomes the new head.
-
-        Pre-condition: self.eid is not in ids.
-        """
-        head = self.get_organization_head()
-
+    def obtain_subordinates(self, ids: [int]) -> Leader:
+        """ Docstring """
+        # I don't know why this returns anything, why set head is called in
+        # client code
+        # TODO: needs lots of testing
+        ids2 = []
         for eid in ids:
-            employee = head.get_employee(eid)
+            ids2.append(eid)
+        head = self.get_organization_head()
+        if head.eid in ids2:
+            runners_up = head.get_direct_subordinates()
+            winner = runners_up[0]
+            max_rating = winner.rating
+            invalids = []
+            for r in runners_up:
+                # I am going to assume there will be a valid runner left
+                if r.eid in ids2:
+                    while r.eid in ids2:
+                        invalids.append(runners_up.pop(runners_up.index(r)))
+                elif r.rating > max_rating:
+                    max_rating = r.rating
+                    winner = r
+            winner_subs = winner.get_direct_subordinates()
+            winner.swap_up()
+            winner._add_subs(winner_subs)
+            head._add_subs(invalids)
 
-            if employee is None:
-                continue
+        head = self.get_organization_head()
+        for eid in ids2:
+            emp = head.get_employee(eid)
+            for sub in emp.get_direct_subordinates():
+                # what if no valid sup?
+                valid_sup = emp.get_superior()
+                while valid_sup.eid in ids2:
+                    valid_sup = valid_sup.get_superior()
+                sub.become_subordinate(valid_sup)
+            emp.become_subordinate(self)
+        return self.get_department_leader()
 
-            old_superior = employee._superior
-
-            if old_superior is None:
-                head = head.get_highest_rated_subordinate()
-                head = head.swap_up()
-                employee = head.get_employee(eid)
-                old_superior = head
-
-            for subordinate in employee.get_direct_subordinates():
-                subordinate.become_subordinate(old_superior)
-
-            employee.become_subordinate(self)
-
-        return head
 
 class Organization:
     """An Organization: an organization containing employees.
@@ -771,7 +712,10 @@ class Organization:
         >>> o.get_head() is None
         True
         """
-        self._head = head
+        if head is None:
+            self._head = None
+        else:
+            self._head = head
 
     def get_employee(self, eid: int) -> Optional[Employee]:
         """
@@ -786,10 +730,11 @@ class Organization:
         >>> o.get_employee(2) is None
         True
         """
-        if self._head is None:
+        h = self._head
+        if h is None:
             return None
-
-        return self._head.get_employee(eid)
+        else:
+            return h.get_employee(eid)
 
     def add_employee(self, employee: Employee, superior_id: int = None) -> None:
         """Add <employee> to this organization as the subordinate of the
@@ -807,21 +752,23 @@ class Organization:
         >>> e1.get_superior() is e2
         True
         """
-        # TODO: What if head is not none but superior_id is none???
+        # what if org. is non-empty and there is no superior id
+        # what if super. id doesn't exist
+
+        # currently adds current head as sub of emp
+        # if super. id is None
+        # (as per create dept hier. doctest)
+
+        # currently does nothing if superior id not in organization
         if superior_id is None:
-            if self._head is None:
-                self._head = employee
-                return
-            else:
-                # Wait. That's illegal.
-                return
-
-        if self._head.eid == superior_id:
-            employee.become_subordinate(self._head)
-            return
-
-        superior = self._head.get_employee(superior_id)
-        employee.become_subordinate(superior)
+            old_head = self.get_head()
+            self._head = employee
+            if old_head is not None:
+                self.get_head().add_subordinate(old_head)
+        else:
+            x = self.get_employee(superior_id)
+            if x is not None:
+                employee.become_subordinate(x)
 
     def get_average_salary(self, position: Optional[str] = None) -> float:
         """Returns the average salary of all employees in the organization with
@@ -841,189 +788,149 @@ class Organization:
         >>> o.get_average_salary()
         15000.0
         """
-        if self._head is None:
+        # why does doctest want 0 instead of 0.0
+        if self.get_head() is None:
             return 0
-
-        lst = self._get_average_salary_helper(self._head, position)
-
-        if lst[1] == 0:
-            return 0
+        elif position is None:
+            head = self.get_head()
+            lst = head.get_all_subordinates()
+            num_employees = 1 + len(lst)
+            total_salary = head.salary
+            for emp in lst:
+                total_salary += emp.salary
+            return total_salary / num_employees
         else:
-            return lst[0] / lst[1]
+            num_employees = 0
+            total_salary = 0
+            head = self.get_head()
+            if head.position == position:
+                num_employees = 1
+                total_salary = head.salary
+            for emp in head.get_all_subordinates():
+                if emp.position == position:
+                    num_employees += 1
+                    total_salary += emp.salary
 
-    def _get_average_salary_helper(self, employee: Employee,
-                                   position: Optional[str] = None) -> list:
-        """A helper method for get_average_salary. Returns a list lst in which
-        lst[0] = total salary of the employee and its subordinates. lst[1]
-        = total employees (including this one)."""
-        total_salary = 0.0
-        total_employees = 0
-
-        if position is None or employee.position == position:
-            total_salary += employee.salary
-            total_employees += 1
-
-        subordinates = employee.get_all_subordinates()
-
-        for subordinate in subordinates:
-            if position is None or subordinate.position == position:
-                total_salary += subordinate.salary
-                total_employees += 1
-
-        return [total_salary, total_employees]
-
-    def get_next_free_id(self) -> int:
-        """Gets the next unused id. The returned id > 0.
-        """
-        taken_ids = self._get_ids_of_subordinates(self._head)
-        count = 1
-
-        while True:
-            if count not in taken_ids:
-                return count
-
-            count += 1
-
-    def _get_ids_of_subordinates(self, employee: Employee) -> List[int]:
-        """Returns all used ids of all subordinates to this employee in a list.
-        Includes the id of this employee.
-        """
-        subordinate_ids = [employee.eid]
-
-        for subordinate in employee.get_direct_subordinates():
-            subordinate_ids = merge(subordinate_ids,
-                                    self._get_ids_of_subordinates(subordinate))
-
-        return subordinate_ids
-
-    def get_employees_with_position(self, position: str) -> List[str]:
-        """Returns all subordinates, as well as this employee, in a list
-        such that the employees in the list hold the passed in position.
-        The employees in the returned list are sorted by id."""
-        lst = []
-
-        for subordinate in self._head.get_all_subordinates():
-            if subordinate.position == position:
-                lst.append(subordinate)
-
-        if self._head.position == position:
-            lst = merge(lst, [self._head])
-
-        return lst
+            if num_employees == 0:
+                return 0.0
+            return total_salary / num_employees
 
     # TODO: Go through client_code.py for additional methods you need to
     #       implement in Task 1.
 
     def get_head(self) -> Optional[Employee]:
-        """Returns the head of the organization, or None if the organization
-        is empty.
-        """
+        """ Docstring """
+
         return self._head
 
+    def get_next_free_id(self) -> int:
+        """ Docstring """
+        h = self.get_head()
+        if h is None:
+            return 1
+        else:
+            prev_id = h.eid
+            for emp in h.get_all_subordinates():
+                if emp.eid > prev_id:
+                    prev_id = emp.eid
+            return prev_id + 1
+
+    def get_employees_with_position(self, position: str) -> [Employee]:
+        """ Docstring """
+        h = self.get_head()
+        if h is None:
+            return []
+        all_emps = merge([h], h.get_all_subordinates())
+        emps_with_pos = []
+        for emp in all_emps:
+            if emp.position == position:
+                emps_with_pos.append(emp)
+        return emps_with_pos
+
     # === TASK 3 ===
-    # TODO: Go through client_code.py for the methods you need to implement in
+    # Go through client_code.py for the methods you need to implement in
     #       Task 3.
-    def set_head(self, head: Employee) -> None:
-        """Sets the head of the organization to a new head.
-        """
-        self._head = head
+
+    def set_head(self, organization_head: Leader) -> None:
+        """ Docstring """
+        self._head = organization_head
 
     # === TASK 4 ===
-    # TODO: Go through client_code.py for the methods you need to implement in
+    # Go through client_code.py for the methods you need to implement in
     #       Task 4.
+
     def fire_employee(self, eid: int) -> None:
-        """Fire the employee with ID eid from this organization.
-
-        Pre-condition: there is an employee with the eid <eid> in
-        this organization.
-        """
-        employee = self._head.get_employee(eid)
-        superior = employee.get_superior()
-
-        if superior is None:
-            superior = employee.get_highest_rated_subordinate().swap_up()
-            employee = superior.get_employee(eid)
-            self._head = superior
-
-        employee.get_superior().remove_subordinate_id(eid)
-
-        for subordinate in employee.get_direct_subordinates():
-            subordinate.become_subordinate(superior)
+        """ Docstring """
+        emp = self.get_employee(eid)
+        if not emp == self.get_head():
+            sup = emp.get_superior()
+            for e in emp.get_direct_subordinates():
+                e.become_subordinate(sup)
+            sup.remove_subordinate_id(eid)
+        else:
+            subs = emp.get_direct_subordinates()
+            if subs != []:
+                best_sub = subs[0]
+                if len(subs) > 1:
+                    highest_rating = best_sub.rating
+                    for sub in subs:
+                        if sub.rating > highest_rating:
+                            highest_rating = sub.rating
+                            best_sub = sub
+                    subs.pop(subs.index(best_sub))
+                    for sub in subs:
+                        sub.become_subordinate(best_sub)
+                    self.set_head(best_sub)
+                else:
+                    self.set_head(best_sub)
 
     def fire_lowest_rated_employee(self) -> None:
-        """Fires the employee with the lowest rating.
-
-        Precondition: head is not None.
-        """
-        employee = self._fire_lowest_rated_employee_helper(self._head)
-        self.fire_employee(employee.eid)
-
-    def _fire_lowest_rated_employee_helper(self, head: Employee) -> Employee:
-        """Fires the employee with the lowest rating.
-
-        Precondition: head is not None.
-        """
+        """ Docstring """
+        if self.get_head() is None:
+            return
+        head = self.get_head()
+        eid = head.eid
         lowest_rating = head.rating
-        employee = head
-
-        for subordinate in head.get_direct_subordinates():
-            if subordinate.rating < lowest_rating:
-                lowest_rating = subordinate.rating
-                employee = subordinate
-
-        return employee
+        for emp in head.get_all_subordinates():
+            if emp.rating < lowest_rating:
+                lowest_rating = emp.rating
+                eid = emp.eid
+            elif emp.rating == lowest_rating:
+                if emp.eid < eid:
+                    lowest_rating = emp.rating
+                    eid = emp.eid
+        self.fire_employee(eid)
 
     def fire_under_rating(self, rating: int) -> None:
-        """Fire all employees with a rating below rating.
-
-        Employees should be fired in order of increasing rating: the lowest
-        rated employees are to be removed first. Break ties in order of eid.
-        """
-        employees = self._get_employees_under_rating(rating)
-
-        for employee in employees:
-            self.fire_employee(employee)
-
-    def _get_employees_under_rating(self, head: Employee, rating: int)-> List[Employee]:
-        """
-        """
-        employee_dict = {}
-        employee_ids = []
-
-        if head.rating > rating:
-            employee_ids.append(head.eid)
-            employee_dict[head.eid] = head
-
-        for subordinate in head.get_direct_subordinates():
-            sub_employees = self._get_employees_under_rating(subordinate, rating)
-            sub_ids = []
-
-            for employee in sub_employees:
-                employee_dict[employee.eid] = employee
-                sub_ids.append(employee.eid)
-
-            employee_ids = merge(employee_ids, sub_ids)
-
-        return_list = []
-
-        for eid in employee_ids:
-            return_list.append(employee_dict[eid])
-
-        return return_list
+        """ Docstring """
+        head = self.get_head()
+        lst = head.get_all_subordinates() + [head]
+        r = 0
+        while r != rating:
+            for emp in lst:
+                if emp.rating < r:
+                    self.fire_employee(emp.eid)
+            r += 1
 
     def promote_employee(self, eid: int) -> None:
-        """
-        """
-        employee = self._head.get_employee(eid)
-        superior = employee.get_superior()
+        """ Docstring """
+        emp = self.get_employee(eid)
+        pos = emp.position
+        salary = emp.salary
+        if emp.get_superior() is None:
+            return
+        while emp.get_superior() is not None:
+            sup = emp.get_superior()
+            while sup.rating <= emp.rating:
+                emp.position = sup.position
+                emp.salary = sup.salary
+                sup.position = pos
+                sup.salary = salary
+                emp.swap_up()
 
-        while superior is not None and superior.rating <= employee.rating:
-            new_employee = employee.swap_up()
-            employee = new_employee
-            superior = new_employee.get_superior()
 
 # === TASK 2: Leader ===
-# TODO: Complete the Leader class and its methods according to their docstrings.
+# Complete the Leader class and its methods according to their docstrings.
 #       You will also need to revisit Organization and Employee to implement
 #       additional methods.
 #       Go through client_code.py to find additional methods that you must
@@ -1082,99 +989,60 @@ class Leader(Employee):
         >>> e2.get_department_name()
         'Department'
         """
-        super().__init__(eid, name, position, salary, rating)
+        Employee.__init__(self, eid, name, position, salary, rating)
         self._department_name = department
 
-    # TODO: Go through client_code.py for additional methods you need to
+    # Go through client_code.py for additional methods you need to
     #       implement in Task 2.
     #       There may also be Employee methods that you'll need to override.
-    def get_department_name(self) -> str:
-        """Returns the name of the leader's department as a string.
-        """
-        return self._department_name
 
-    def get_department_employees(self) -> List[Employee]:
-        """Returns a list of all employees who are in this leader's department.
-        The employees in the list are in order of eid.
-        """
-        subs = self.get_all_subordinates()
-        return_list = []
+    def get_department_employees(self) -> [Employee]:
+        """ Docstring """
 
-        for i in range(0, len(subs)):
-            if subs[i].get_department_name() == self._department_name:
-                return_list.append(subs[i])
+        # tested
 
-        return merge(return_list, [self])
-
-    def get_position_in_hierarchy(self) -> str:
-        """Returns a string that describes the Employee's position in the
-        organization.
-
-        >>> e1 = Employee(1, "Emma Ployee", "Worker", 10000, 50)
-        >>> e1.get_position_in_hierarchy()
-        'Worker'
-        >>> e2 = Leader(2, "Sue Perior", "Manager", 20000, 30, "Department")
-        >>> e3 = Leader(3, "Bigg Boss", "CEO", 50000, 60, "Company")
-        >>> e1.become_subordinate(e2)
-        >>> e2.become_subordinate(e3)
-        >>> e1.get_position_in_hierarchy()
-        'Worker, Department, Company'
-        >>> e2.get_position_in_hierarchy()
-        'Manager, Department, Company'
-        >>> e3.get_position_in_hierarchy()
-        'CEO, Company'
-        """
-        return_string = self.position + ', ' + self._department_name
-        superior = self._superior
-
-        while superior is not None:
-            if isinstance(superior, Leader):
-                return_string += ', ' + superior.get_department_name()
-
-            superior = superior._superior
-
-        return return_string
+        # not really recursive, could be made better
+        ans = [self]
+        for sub in self._subordinates:
+            if not isinstance(sub, Leader):
+                ans = merge(ans, [sub])
+                subs = sub.get_all_subordinates()
+                sub_subs = []
+                for sub2 in subs:
+                    if isinstance(sub2, Leader):
+                        sub_subs.append(sub2)
+                ans = merge(ans, sub_subs)
+        return ans
 
     # === TASK 3 ===
-    # TODO: Go through client_code.py for the methods you need to implement in
+    # Go through client_code.py for the methods you need to implement in
     #       Task 3. If there are no methods there, consider if you need to
     #       override any of the Task 3 Employee methods.
 
+    def become_employee(self) -> Employee:
+        """ Docstring """
+        e = Employee(self.eid, self.name, self.position, self.salary,
+                     self.rating)
+        sup = self.get_superior()
+        sup.remove_subordinate_id(self.eid)
+        e.become_subordinate(sup)
+        e._add_subs(self.get_direct_subordinates())
+        return e
+
     def become_leader(self, department_name: str) -> Leader:
+        """ Docstring """
         self._department_name = department_name
         return self
 
-    def become_employee(self) -> Employee:
-        """Creates an Employee version of this leader and replaces this leader
-        with the Employee version in the organization hierarchy. Returns the
-        newly constructed Employee object.
-        """
-        employee = Employee(self.eid, self.name, self.position, self.salary,
-                            self.rating)
 
-        if self._superior is not None:
-            self._superior.remove_subordinate_id(self.eid)
-            employee.become_subordinate(self._superior)
-
-        # This makes a copy of the subordinates list.
-        subordinates = []
-
-        for subordinate in self._subordinates:
-            subordinates.append(subordinate)
-
-        for subordinate in subordinates:
-            subordinate.become_subordinate(employee)
-
-        return employee
-
-    # === TASK 4 ===
-    # TODO: Go through client_code.py for the methods you need to implement in
-    #       Task 4. If there are no methods there, consider if you need to
-    #       override any of the Task 4 Employee methods.
+# === TASK 4 ===
+# Go through client_code.py for the methods you need to implement in
+#       Task 4. If there are no methods there, consider if you need to
+#       override any of the Task 4 Employee methods.
 
 
 # === TASK 5 ===
-# TODO: Complete the create_department_salary_tree() function according to
+# Complete the create_department_salary_tree() function according to
 #       its docstrings and the specifications in the assignment handout.
 #
 # You may add private helper functions, but do not change the public interface.
@@ -1244,17 +1112,53 @@ def create_department_salary_tree(organization: Organization) -> \
     >>> dst.subdepartments[0].salary
     15000.0
     """
-    # TODO Task 5: Complete the create_department_salary_tree function.
+    head = organization.get_head()
+    if head is None:
+        return None
+    if head.get_department_name() == '':
+        return None
+    return _get_department(head)
+
+
+def _get_department(e: Employee) -> DepartmentSalaryTree:
+    """ Docstring """
+    if _get_sub_leaders(e) == []:
+        return DepartmentSalaryTree(e.get_department_name(), _get_dept_avg(e),
+                                    [])
+    lst = []
+    for sub in _get_sub_leaders(e):
+        lst.append(_get_department(sub))
+    return DepartmentSalaryTree(e.get_department_name(), _get_dept_avg(e), lst)
+
+
+def _get_dept_avg(e: Employee) -> None:
+    """ Docstring """
+    lst = e.get_department_employees()
+    capital = 0
+    for emp in lst:
+        capital += emp.salary
+    return capital / len(lst)
+
+
+def _get_sub_leaders(e: Employee) -> List[Leader]:
+    """ Docstring """
+    ans = []
+    subs = e.get_all_subordinates()
+    for i in subs:
+        if isinstance(i, Leader):
+            ans.append(i)
+    return ans
 
 
 # === TASK 6 ===
-# TODO: Complete the create_organization_from_file() function according to
+# Complete the create_organization_from_file() function according to
 #       its docstrings and the specifications in the assignment handout.
 #
 # You may add private helper functions, but do not change the public interface.
 # Any helper functions you create should have _ at the start of its name to
 # denote it being private (e.g. "def _helper_function()")
 # Make sure you properly document (e.g. docstrings, type annotations) your code.
+
 
 def create_organization_from_file(file: TextIO) -> Organization:
     """Return the Organization represented by the information in <file>.
@@ -1263,7 +1167,26 @@ def create_organization_from_file(file: TextIO) -> Organization:
     >>> o.get_head().name
     'Alice'
     """
-    # TODO Task 6: Complete the create_organization_from_file function.
+    org = Organization()
+    for line in file.readlines():
+        data = line.split(",")
+        if data[5] == '':
+            if len(data) == 7:
+                org.set_head(Leader(data[0], data[1], data[2], data[3],
+                                    data[4], data[6]))
+            else:
+                org.set_head(Employee(data[0], data[1], data[2], data[3],
+                                      data[4]))
+        else:
+            if len(data) == 7:
+                org.add_employee(Leader(data[0], data[1], data[2], data[3],
+                                        data[4], data[6]), data[5])
+            else:
+                org.add_employee(Employee(data[0], data[1], data[2], data[3],
+                                          data[4]), data[5])
+    return org
+
+    # Task 6: Complete the create_organization_from_file function.
 
 
 if __name__ == "__main__":

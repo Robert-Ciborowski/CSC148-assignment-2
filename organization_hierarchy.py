@@ -339,10 +339,9 @@ class Employee:
     # Go through client_code.py for additional methods you need to
     #       implement in Task 1. Write their headers and bodies below.
 
-    def get_employees_paid_more_than(self, amount: float) -> List[Employee]:
-        """Get all subordinates of this employee that have a salary higher than
-        <amount> (including this employee, if this employee's salary is higher
-        than <amount>).
+    def get_higher_paid_employees(self) -> List[Employee]:
+        """Get all employees of the organization that have a salary higher than
+        this employee's salary.
 
         Employees must be returned in increasing order of eid.
 
@@ -351,38 +350,14 @@ class Employee:
         >>> e3 = Employee(3, "Bigg Boss", "CEO", 50000, 60)
         >>> e1.become_subordinate(e2)
         >>> e2.become_subordinate(e3)
-        >>> more_than_10000 = e3.get_employees_paid_more_than(10000)
-        >>> len(more_than_10000) == 2
+        >>> more_than = e2.get_higher_paid_employees()
+        >>> len(more_than) == 1
         True
-        >>> more_than_10000[0].name
-        'Sue Perior'
-        >>> more_than_10000[1].name
+        >>> more_than[0].name
         'Bigg Boss'
         """
-        # TODO Task 1: Complete the get_employees_paid_more_than method.
-        employee_dict = {}
-        employee_ids = []
-
-        if self.salary > amount:
-            employee_ids.append(self.eid)
-            employee_dict[self.eid] = self
-
-        for subordinate in self._subordinates:
-            sub_employees = subordinate.get_employees_paid_more_than(amount)
-            sub_ids = []
-
-            for employee in sub_employees:
-                employee_dict[employee.eid] = employee
-                sub_ids.append(employee.eid)
-
-            employee_ids = merge(employee_ids, sub_ids)
-
-        return_list = []
-
-        for eid in employee_ids:
-            return_list.append(employee_dict[eid])
-
-        return return_list
+        return self.get_organization_head() \
+            .get_employees_paid_more_than(self.salary)
 
     def get_closest_common_superior(self, eid: int) -> Employee:
         """ Docstring """

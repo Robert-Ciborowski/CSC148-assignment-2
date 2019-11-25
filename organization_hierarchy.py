@@ -749,6 +749,25 @@ class Employee:
 
         return head
 
+    def get_department_employees(self):
+        """ Docstring """
+
+        # tested
+
+        # not really recursive, could be made better
+        ans = [self]
+        for sub in self._subordinates:
+            if not isinstance(sub, Leader):
+                ans = merge(ans, [sub])
+                subs = sub.get_all_subordinates()
+                sub_subs = []
+                for sub2 in subs:
+                    if isinstance(sub2, Leader):
+                        sub_subs.append(sub2)
+                ans = merge(ans, sub_subs)
+        return ans
+
+
 class Organization:
     """An Organization: an organization containing employees.
 
@@ -982,9 +1001,11 @@ class Organization:
         employees = self._get_employees_under_rating(rating)
 
         for employee in employees:
-            self.fire_employee(employee)
+            # changed to employee.eid from employee
+            self.fire_employee(employee.eid)
 
-    def _get_employees_under_rating(self, head: Employee, rating: int)-> List[Employee]:
+    def _get_employees_under_rating(self, head: Employee, rating: int) -> List[
+        Employee]:
         """
         """
         employee_dict = {}
@@ -995,7 +1016,8 @@ class Organization:
             employee_dict[head.eid] = head
 
         for subordinate in head.get_direct_subordinates():
-            sub_employees = self._get_employees_under_rating(subordinate, rating)
+            sub_employees = self._get_employees_under_rating(subordinate,
+                                                             rating)
             sub_ids = []
 
             for employee in sub_employees:
@@ -1021,6 +1043,7 @@ class Organization:
             new_employee = employee.swap_up()
             employee = new_employee
             superior = new_employee.get_superior()
+
 
 # === TASK 2: Leader ===
 # TODO: Complete the Leader class and its methods according to their docstrings.
@@ -1244,7 +1267,42 @@ def create_department_salary_tree(organization: Organization) -> \
     >>> dst.subdepartments[0].salary
     15000.0
     """
-    # TODO Task 5: Complete the create_department_salary_tree function.
+    head = organization.get_head()
+    if head is None:
+        return None
+    if head.get_department_name() == '':
+        return None
+    return _get_department(head)
+
+
+def _get_department(e: Employee) -> DepartmentSalaryTree:
+    """ Docstring """
+    if not _get_sub_leaders(e):
+        return DepartmentSalaryTree(e.get_department_name(), _get_dept_avg(e),
+                                    [])
+    lst = []
+    for sub in _get_sub_leaders(e):
+        lst.append(_get_department(sub))
+    return DepartmentSalaryTree(e.get_department_name(), _get_dept_avg(e), lst)
+
+
+def _get_dept_avg(e: Employee) -> float:
+    """ Docstring """
+    lst = e.get_department_employees()
+    capital = 0
+    for emp in lst:
+        capital += emp.salary
+    return capital / len(lst)
+
+
+def _get_sub_leaders(e: Employee) -> List[Leader]:
+    """ Docstring """
+    ans = []
+    subs = e.get_all_subordinates()
+    for i in subs:
+        if isinstance(i, Leader):
+            ans.append(i)
+    return ans
 
 
 # === TASK 6 ===

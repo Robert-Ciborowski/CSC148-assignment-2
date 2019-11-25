@@ -181,34 +181,15 @@ class Employee:
         >>> e3.get_all_subordinates()[1].name
         'Sue Perior'
         """
-        # TODO Task 1: Complete the get_all_subordinates method.
-        if len(self._subordinates) == 0:
+        ans = []
+
+        if self._subordinates == []:
             return []
-
-        subordinate_dict = {}
-        subordinate_ids = []
-
-        for subordinate in self._subordinates:
-            # Note that self._subordinates is already in order of IDs.
-            subordinate_dict[subordinate.eid] = subordinate
-            subordinate_ids.append(subordinate.eid)
-
-        for subordinate in self._subordinates:
-            subordinates = subordinate.get_all_subordinates()
-            id_list = []
-
-            for subordinate_2 in subordinates:
-                subordinate_dict[subordinate_2.eid] = subordinate_2
-                id_list.append(subordinate_2.eid)
-
-            subordinate_ids = merge(subordinate_ids, id_list)
-
-        subordinate_list = []
-
-        for eid in subordinate_ids:
-            subordinate_list.append(subordinate_dict[eid])
-
-        return subordinate_list
+        else:
+            for sub in self._subordinates:
+                ans = merge(ans, [sub])
+                ans = merge(ans, sub.get_all_subordinates())
+        return ans
 
     def get_organization_head(self) -> Employee:
         """Return the head of the organization.
@@ -371,30 +352,14 @@ class Employee:
         >>> more_than_10000[1].name
         'Bigg Boss'
         """
-        # TODO Task 1: Complete the get_employees_paid_more_than method.
-        employee_dict = {}
-        employee_ids = []
-
+        ans = []
         if self.salary > amount:
-            employee_ids.append(self.eid)
-            employee_dict[self.eid] = self
-
-        for subordinate in self._subordinates:
-            sub_employees = subordinate.get_employees_paid_more_than(amount)
-            sub_ids = []
-
-            for employee in sub_employees:
-                employee_dict[employee.eid] = employee
-                sub_ids.append(employee.eid)
-
-            employee_ids = merge(employee_ids, sub_ids)
-
-        return_list = []
-
-        for eid in employee_ids:
-            return_list.append(employee_dict[eid])
-
-        return return_list
+            ans.append(self)
+        if self._subordinates == []:
+            return ans
+        for sub in self._subordinates:
+            ans = merge(ans, sub.get_employees_paid_more_than(amount))
+        return ans
 
     # TODO: Go through client_code.py for additional methods you need to
     #       implement in Task 1. Write their headers and bodies below.
@@ -807,13 +772,13 @@ class Organization:
         >>> e1.get_superior() is e2
         True
         """
-        # TODO: What if head is not none but superior_id is none???
         if superior_id is None:
             if self._head is None:
                 self._head = employee
                 return
             else:
-                # Wait. That's illegal.
+                self._head.become_subordinate(employee)
+                self._head = employee
                 return
 
         if self._head.eid == superior_id:
@@ -966,7 +931,7 @@ class Organization:
         lowest_rating = head.rating
         employee = head
 
-        for subordinate in head.get_direct_subordinates():
+        for subordinate in head.get_all_subordinates():
             if subordinate.rating < lowest_rating:
                 lowest_rating = subordinate.rating
                 employee = subordinate
@@ -979,37 +944,29 @@ class Organization:
         Employees should be fired in order of increasing rating: the lowest
         rated employees are to be removed first. Break ties in order of eid.
         """
-        employees = self._get_employees_under_rating(rating)
+        employees = self._get_employees_under_rating(self._head, rating)
 
         for employee in employees:
-            self.fire_employee(employee)
+            self.fire_employee(employee.eid)
 
     def _get_employees_under_rating(self, head: Employee, rating: int)-> List[Employee]:
         """
         """
-        employee_dict = {}
-        employee_ids = []
+        ans = []
+        ans2 = []
 
-        if head.rating > rating:
-            employee_ids.append(head.eid)
-            employee_dict[head.eid] = head
+        if head.rating < rating:
+            ans.append(self)
 
-        for subordinate in head.get_direct_subordinates():
-            sub_employees = self._get_employees_under_rating(subordinate, rating)
-            sub_ids = []
+        if not head.get_direct_subordinates():
+            return ans
 
-            for employee in sub_employees:
-                employee_dict[employee.eid] = employee
-                sub_ids.append(employee.eid)
+        for sub in head.get_all_subordinates():
+            if sub.rating < rating:
+                ans2.append(sub)
 
-            employee_ids = merge(employee_ids, sub_ids)
-
-        return_list = []
-
-        for eid in employee_ids:
-            return_list.append(employee_dict[eid])
-
-        return return_list
+        ans = merge(ans, ans2)
+        return ans
 
     def promote_employee(self, eid: int) -> None:
         """
@@ -1018,9 +975,11 @@ class Organization:
         superior = employee.get_superior()
 
         while superior is not None and superior.rating <= employee.rating:
-            new_employee = employee.swap_up()
-            employee = new_employee
-            superior = new_employee.get_superior()
+            employee = employee.swap_up()
+            superior = employee.get_superior()
+
+        if superior is None:
+            self._head = employee
 
 # === TASK 2: Leader ===
 # TODO: Complete the Leader class and its methods according to their docstrings.
@@ -1244,7 +1203,47 @@ def create_department_salary_tree(organization: Organization) -> \
     >>> dst.subdepartments[0].salary
     15000.0
     """
-    # TODO Task 5: Complete the create_department_salary_tree function.
+    head = organization.get_head()
+    if head is None:
+        return None
+    if head.get_department_name() == '':
+        return None
+    return _get_department(head)
+
+
+def _get_department(e: Leader) -> DepartmentSalaryTree:
+    """ Docstring """
+    if not _get_sub_leaders(e):
+        return DepartmentSalaryTree(e.get_department_name(), _get_dept_avg(e),
+                                    [])
+
+    lst = []
+
+    for sub in _get_sub_leaders(e):
+        lst.append(_get_department(sub))
+
+    return DepartmentSalaryTree(e.get_department_name(), _get_dept_avg(e), lst)
+
+
+def _get_dept_avg(e: Leader) -> float:
+    """ Docstring """
+    lst = e.get_department_employees()
+    capital = 0
+
+    for emp in lst:
+        capital += emp.salary
+
+    return capital / len(lst)
+
+
+def _get_sub_leaders(e: Leader) -> List[Leader]:
+    """ Docstring """
+    ans = []
+    subs = e.get_all_subordinates()
+    for i in subs:
+        if isinstance(i, Leader):
+            ans.append(i)
+    return ans
 
 
 # === TASK 6 ===
@@ -1263,7 +1262,45 @@ def create_organization_from_file(file: TextIO) -> Organization:
     >>> o.get_head().name
     'Alice'
     """
-    # TODO Task 6: Complete the create_organization_from_file function.
+    org = Organization()
+
+    # We store our employees here.
+    employees = []
+
+    # The index in the employees list where the leader is located.
+    leader_index = -1
+
+    # A counter for our loop.
+    count = 0
+
+    for line in file.readlines():
+        data = line.split(",")
+
+        if len(data) == 7:
+            employee = Leader(int(data[0]), data[1], data[2],
+                              float(data[3]), int(data[4]), data[6])
+        else:
+            employee = Employee(int(data[0]), data[1], data[2],
+                                float(data[3]), int(data[4]))
+
+        if data[5] == '':
+            # This is a leader!
+            employees.append((employee, -1))
+            leader_index = count
+        else:
+            employees.append((employee, int(data[5])))
+
+        count += 1
+
+    org.set_head(employees[leader_index][0])
+
+    for t in employees:
+        if t[1] == -1:
+            continue
+
+        org.add_employee(t[0], t[1])
+
+    return org
 
 
 if __name__ == "__main__":

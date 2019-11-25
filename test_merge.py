@@ -48,11 +48,3 @@ if __name__ == '__main__':
     import pytest
 
     pytest.main(['test_merge.py'])
-
-    import python_ta
-
-    python_ta.check_all(config={
-        'allowed-import-modules': ['__future__', 'typing', 'json',
-                                   'python_ta', 'doctest', 'io',
-                                   'store', 'pytest'],
-        'disable': ['W0613', 'W0212']})

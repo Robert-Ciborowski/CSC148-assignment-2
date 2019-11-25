@@ -1276,7 +1276,7 @@ def create_organization_from_file(file: TextIO) -> Organization:
         # This generates the employee.
         if len(data) == 7:
             employee = Leader(int(data[0]), data[1], data[2],
-                              float(data[3]), int(data[4]), data[6])
+                              float(data[3]), int(data[4]), data[6].rstrip())
         else:
             employee = Employee(int(data[0]), data[1], data[2],
                                 float(data[3]), int(data[4]))

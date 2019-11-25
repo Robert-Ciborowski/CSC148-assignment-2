@@ -755,6 +755,30 @@ def _fire_lowest_rated_employee_helper(head: Employee) -> Employee:
     return employee
 
 
+def _get_employees_under_rating(head: Employee, rating: int)\
+        -> List[Employee]:
+    """A helper method which returns all employees as a subordinate of
+    head (including head) which have a rating below the passed in value.
+    """
+    ans = []
+    ans2 = []
+
+    # This appends head.
+    if head.rating < rating:
+        ans.append(head)
+
+    if not head.get_direct_subordinates():
+        return ans
+
+    # This appends all the other subordinates.
+    for sub in head.get_all_subordinates():
+        if sub.rating < rating:
+            ans2.append(sub)
+
+    ans = merge(ans, ans2)
+    return ans
+
+
 class Organization:
     """An Organization: an organization containing employees.
 
@@ -953,33 +977,10 @@ class Organization:
         Employees should be fired in order of increasing rating: the lowest
         rated employees are to be removed first. Breaks ties in order of eid.
         """
-        employees = self._get_employees_under_rating(self._head, rating)
+        employees = _get_employees_under_rating(self._head, rating)
 
         for employee in employees:
             self.fire_employee(employee.eid)
-
-    def _get_employees_under_rating(self, head: Employee, rating: int)\
-            -> List[Employee]:
-        """A helper method which returns all employees as a subordinate of
-        head (including head) which have a rating below the passed in value.
-        """
-        ans = []
-        ans2 = []
-
-        # This appends head.
-        if head.rating < rating:
-            ans.append(self)
-
-        if not head.get_direct_subordinates():
-            return ans
-
-        # This appends all the other subordinates.
-        for sub in head.get_all_subordinates():
-            if sub.rating < rating:
-                ans2.append(sub)
-
-        ans = merge(ans, ans2)
-        return ans
 
     def promote_employee(self, eid: int) -> None:
         """Promote the employee with the eid <eid> in self.current_organization
@@ -1293,11 +1294,18 @@ def create_organization_from_file(file: TextIO) -> Organization:
     # first line of the file.
     org.set_head(employees[leader_index][0])
 
-    for t in employees:
-        if t[1] == -1:
-            continue
+    while employees:
+        count = 0
 
-        org.add_employee(t[0], t[1])
+        for t in employees:
+            if t[1] == -1:
+                continue
+
+            if org.get_employee(t[1]) is not None:
+                org.add_employee(t[0], t[1])
+                employees.pop(count)
+
+            count += 1
 
     return org
 

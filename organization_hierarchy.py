@@ -712,26 +712,25 @@ class Employee:
 
         return head
 
-<<<<<<< HEAD
-    def get_department_employees(self):
-        """ Docstring """
+    # should only be in Leader
+    # def get_department_employees(self):
+    #     """ Docstring """
+    #
+    #     # tested
+    #
+    #     # not really recursive, could be made better
+    #     ans = [self]
+    #     for sub in self._subordinates:
+    #         if not isinstance(sub, Leader):
+    #             ans = merge(ans, [sub])
+    #             subs = sub.get_all_subordinates()
+    #             sub_subs = []
+    #             for sub2 in subs:
+    #                 if isinstance(sub2, Leader):
+    #                     sub_subs.append(sub2)
+    #             ans = merge(ans, sub_subs)
+    #     return ans
 
-        # tested
-
-        # not really recursive, could be made better
-        ans = [self]
-        for sub in self._subordinates:
-            if not isinstance(sub, Leader):
-                ans = merge(ans, [sub])
-                subs = sub.get_all_subordinates()
-                sub_subs = []
-                for sub2 in subs:
-                    if isinstance(sub2, Leader):
-                        sub_subs.append(sub2)
-                ans = merge(ans, sub_subs)
-        return ans
-
-=======
 
 def _get_average_salary_helper(employee: Employee,
                                position: Optional[str] = None) -> list:
@@ -775,7 +774,7 @@ def _fire_lowest_rated_employee_helper(head: Employee) -> Employee:
     return employee
 
 
-def _get_employees_under_rating(head: Employee, rating: int)\
+def _get_employees_under_rating(head: Employee, rating: int) \
         -> List[Employee]:
     """A helper method which returns all employees as a subordinate of
     head (including head) which have a rating below the passed in value.
@@ -798,7 +797,6 @@ def _get_employees_under_rating(head: Employee, rating: int)\
     ans = merge(ans, ans2)
     return ans
 
->>>>>>> 38f02c42db93a5ea6b02f4863a6d7714f5c82991
 
 class Organization:
     """An Organization: an organization containing employees.
@@ -1001,12 +999,11 @@ class Organization:
         employees = _get_employees_under_rating(self._head, rating)
 
         for employee in employees:
-<<<<<<< HEAD
             # changed to employee.eid from employee
             self.fire_employee(employee.eid)
 
-    def _get_employees_under_rating(self, head: Employee, rating: int) -> List[
-        Employee]:
+    def _get_employees_under_rating(self, head: Employee, rating: int) -> \
+            [Employee]:
         """
         """
         employee_dict = {}
@@ -1033,9 +1030,8 @@ class Organization:
             return_list.append(employee_dict[eid])
 
         return return_list
-=======
-            self.fire_employee(employee.eid)
->>>>>>> 38f02c42db93a5ea6b02f4863a6d7714f5c82991
+
+        # self.fire_employee(employee.eid)
 
     def promote_employee(self, eid: int) -> None:
         """Promote the employee with the eid <eid> in self.current_organization
@@ -1053,10 +1049,12 @@ class Organization:
             employee = employee.swap_up()
             superior = employee.get_superior()
 
-<<<<<<< HEAD
+        if superior is None:
+            self._head = employee
+
 
 # === TASK 2: Leader ===
-# TODO: Complete the Leader class and its methods according to their docstrings.
+# Complete the Leader class and its methods according to their docstrings.
 #       You will also need to revisit Organization and Employee to implement
 #       additional methods.
 #       Go through client_code.py to find additional methods that you must
@@ -1069,13 +1067,6 @@ class Organization:
 #
 # After the completion of Task 2, you should be able to run organization_ui.py,
 # though not all of the buttons will work.
-=======
-        if superior is None:
-            self._head = employee
->>>>>>> 38f02c42db93a5ea6b02f4863a6d7714f5c82991
-
-
-# === TASK 2: Leader ===
 class Leader(Employee):
     """A subclass of Employee. The leader of a department in an organization.
 
@@ -1268,52 +1259,91 @@ def create_department_salary_tree(organization: Organization) -> \
     15000.0
     """
     head = organization.get_head()
-<<<<<<< HEAD
     if head is None:
         return None
     if head.get_department_name() == '':
         return None
-    return _get_department(head)
+    return _get_dept_tree(head)
 
 
-def _get_department(e: Employee) -> DepartmentSalaryTree:
-    """ Docstring """
-    if not _get_sub_leaders(e):
+def _get_dept_tree(e: Employee) -> Optional[DepartmentSalaryTree]:
+    """ A helper method which returns a DepartmentSalaryTree when <e> is a
+    leader or None otherwise.
+    """
+    if isinstance(e, Leader):
+        subtrees = _dept_tree_helper(e)
         return DepartmentSalaryTree(e.get_department_name(), _get_dept_avg(e),
-                                    [])
-    lst = []
-    for sub in _get_sub_leaders(e):
-        lst.append(_get_department(sub))
-    return DepartmentSalaryTree(e.get_department_name(), _get_dept_avg(e), lst)
-
-
-def _get_dept_avg(e: Employee) -> float:
-    """ Docstring """
-    lst = e.get_department_employees()
-    capital = 0
-    for emp in lst:
-        capital += emp.salary
-    return capital / len(lst)
-
-
-def _get_sub_leaders(e: Employee) -> List[Leader]:
-    """ Docstring """
-    ans = []
-    subs = e.get_all_subordinates()
-    for i in subs:
-        if isinstance(i, Leader):
-            ans.append(i)
-    return ans
-=======
-
-    if head is None:
+                                    subtrees)
+    else:
         return None
->>>>>>> 38f02c42db93a5ea6b02f4863a6d7714f5c82991
 
-    # if head.get_department_name() == '':
-    #     return
 
-    return _get_department(head)
+def _dept_tree_helper(e: Employee) -> [DepartmentSalaryTree]:
+    """ A helper method for _get_dept_tree() that returns a list of DSTs
+    from <e>"""
+    subtrees = []
+    for sub in e.get_direct_subordinates():
+        if isinstance(sub, Leader):
+            tree = _get_dept_tree(sub)
+            if tree is not None:
+                subtrees.append(tree)
+        else:
+            subtrees += _dept_tree_helper(sub)
+    return subtrees
+
+
+# def _get_employee_depttrees(sub: Employee) -> [DepartmentSalaryTree]:
+#     subtrees = []
+#     for sub_sub in sub.get_direct_subordinates():
+#         if isinstance(sub_sub, Leader):
+#             t = _get_dept_tree(sub_sub)
+#             if t:
+#                 subtrees.append(sub_sub)
+#         else:
+#             subtrees += _get_employee_depttrees(sub_sub)
+#     return subtrees
+
+
+# probably old version
+# def _get_department(e: Employee) -> DepartmentSalaryTree:
+#     """ Docstring """
+#     if not _get_sub_leaders(e):
+#         return DepartmentSalaryTree(e.get_department_name(), _get_dept_avg(e),
+#                                     [])
+#     lst = []
+#     for sub in _get_sub_leaders(e):
+#         lst.append(_get_department(sub))
+#     name = e.get_department_name()
+#     return DepartmentSalaryTree(name, _get_dept_avg(e), lst)
+
+
+# I think this is old
+# def _get_dept_avg(e: Employee) -> float:
+#     """ Docstring """
+#     lst = e.get_department_leader().get_department_employees()
+#     capital = 0
+#     for emp in lst:
+#         capital += emp.salary
+#     return capital / len(lst)
+
+
+# probably old
+# def _get_sub_leaders(e: Employee) -> List[Leader]:
+#     """ Docstring """
+#     ans = []
+#     subs = e.get_all_subordinates()
+#     for i in subs:
+#         if isinstance(i, Leader):
+#             ans.append(i)
+#     return ans
+
+# if head is None:
+#     return None
+
+# if head.get_department_name() == '':
+#     return
+
+# return _get_department(head)
 
 
 def _get_department(e: Leader) -> DepartmentSalaryTree:

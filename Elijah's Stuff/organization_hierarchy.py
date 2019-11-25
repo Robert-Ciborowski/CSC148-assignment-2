@@ -1172,8 +1172,8 @@ def create_organization_from_file(file: TextIO) -> Organization:
         data = line.split(",")
         if data[5] == '':
             if len(data) == 7:
-                org.set_head(Leader(data[0], data[1], data[2], data[3],
-                                    data[4], data[6]))
+                org.set_head(Leader(int(data[0]), data[1], data[2], data[3],
+                                    int(data[4]), data[6]))
             else:
                 org.set_head(Employee(data[0], data[1], data[2], data[3],
                                       data[4]))

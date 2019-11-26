@@ -708,12 +708,13 @@ class Employee:
                 # needs to be found. Chosen by rating.
                 highest_rated = head.get_highest_rated_subordinate()
 
-                for sub in head.get_direct_subordinates():
+                new_subs = head.get_direct_subordinates()
+                new_subs.pop(new_subs.index(highest_rated))
+                for sub in new_subs:
                     # subs of employee being moved (which in this case is head)
                     # are added to new head: highest_rated
                     # note: highest_rated is not added as a sub of itself
-                    if sub.eid != highest_rated.eid:
-                        sub.become_subordinate(highest_rated)
+                    sub.become_subordinate(highest_rated)
 
                 # Highest rating becomes head of organization
                 highest_rated.become_subordinate(None)
@@ -855,19 +856,17 @@ class Organization:
         >>> e1.get_superior() is e2
         True
         """
-        # This checks if no id was given.
         head = self.get_head()
         if superior_id is None:
-            if head is None:
-                # This runs if the organization is empty.
-                self.set_head(employee)
-                return
-            else:
-                # Assigns the employee as the new head.
+            # This checks if no id was given. No ID means this employee becomes
+            # the head of the organization.
+            if head is not None:
+                # This organization is non-empty and the old head needs to
+                # become a subordinate of the new employee.
                 head.become_subordinate(employee)
-                self.set_head(employee)
-                return
-
+            self.set_head(employee)
+            return
+        
         if head.eid == superior_id:
             employee.become_subordinate(head)
             return

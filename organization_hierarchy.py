@@ -561,21 +561,22 @@ class Employee:
         # return new_lead
 
     def become_leader(self, department_name: str) -> Leader:
-        """Creates a Leader version of this employee and replaces this employee
+        """ Creates a Leader version of this employee and replaces this employee
         with the leader version in the organization hierarchy. Returns the
         newly constructed Leader object.
         """
         leader = Leader(self.eid, self.name, self.position, self.salary,
                         self.rating, department_name)
+        superior = self.get_superior()
 
-        if self._superior is not None:
-            self._superior.remove_subordinate_id(self.eid)
-            leader.become_subordinate(self._superior)
+        if superior is not None:
+            superior.remove_subordinate_id(self.eid)
+            leader.become_subordinate(superior)
 
         # This makes a copy of the subordinates list.
         subordinates = []
 
-        for subordinate in self._subordinates:
+        for subordinate in self.get_direct_subordinates():
             subordinates.append(subordinate)
 
         for subordinate in subordinates:
@@ -863,16 +864,21 @@ class Organization:
         True
         """
         # This checks if no id was given.
+        head = self.get_head()
         if superior_id is None:
-            if self._head is None:
+            if head is None:
                 # This runs if the organization is empty.
-                self._head = employee
+                self.set_head(employee)
                 return
             else:
                 # Assigns the employee as the new head.
-                self._head.become_subordinate(employee)
-                self._head = employee
+                head.become_subordinate(employee)
+                self.set_head(employee)
                 return
+
+        if head.eid == superior_id:
+            employee.become_subordinate(head)
+            return
 
         if self._head.eid == superior_id:
             employee.become_subordinate(self._head)

@@ -967,7 +967,7 @@ class Organization:
         Pre-condition: there is an employee with the eid <eid> in
         this organization.
         """
-        employee = self.get_head().get_employee(eid)
+        employee = self.get_employee(eid)
         superior = employee.get_superior()
 
         if superior is None:
@@ -1047,7 +1047,7 @@ class Organization:
         Precondition: There is an employee in self.current_organization with
         eid <eid>.
         """
-        employee = self.get_head().get_employee(eid)
+        employee = self.get_employee(eid)
         superior = employee.get_superior()
 
         # This continuously swaps up our employee until we no longer need to.

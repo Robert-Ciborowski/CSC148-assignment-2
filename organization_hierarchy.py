@@ -520,21 +520,26 @@ class Employee:
         >>> len(subordinates)
         3
         """
-        leader = self.get_department_leader()
+        old_leader = self.get_department_leader()
 
-        if leader is None or leader == self:
-            return self
-
-        if not self.get_department_name() or leader == self:
+        if old_leader is None or old_leader == self:
+            # nothing happens because there is no department or because self
+            # is already the leader
             return self.get_organization_head()
 
-        superior = leader.get_superior()
-        new_leader = self.become_leader(leader.get_department_name())
+        # if not self.get_department_name() or leader == self:
+        #     # nothing happens because there is no department or because self
+        #     # is already the leader
+        #     return self.get_organization_head()
 
-        new_leader.become_subordinate(superior)
-        new_employee = leader.become_employee()
-        if superior:
-            superior.remove_subordinate_id(new_employee.eid)
+        old_lead_superior = old_leader.get_superior()
+        new_leader = self.become_leader(old_leader.get_department_name())
+        new_employee = old_leader.become_employee()
+
+        if old_lead_superior:
+            old_lead_superior.remove_subordinate_id(new_employee.eid)
+        new_employee.remove_subordinate_id(self.eid)
+        new_leader.become_subordinate(old_lead_superior)
         new_employee.become_subordinate(new_leader)
 
         return new_leader.get_organization_head()
@@ -717,21 +722,30 @@ class Employee:
             if employee is None:
                 continue
 
-            old_superior = employee._superior
+            old_superior = employee.get_superior()
 
             if old_superior is None:
                 # The employee being moved is the organization head. A new head
-                # needs to be found.
-                highest = head.get_highest_rated_subordinate()
-                head.remove_subordinate_id(highest.eid)
-                highest._superior = None
+                # needs to be found. Chosen by rating.
+                highest_rated = head.get_highest_rated_subordinate()
 
-                for subordinate in head.get_direct_subordinates():
-                    subordinate.become_subordinate(highest)
+                for sub in head.get_direct_subordinates():
+                    # subs of employee being moved (which in this case is head)
+                    # are added to new head: highest_rated
+                    # note: highest_rated is not added as a sub of itself
+                    if sub.eid != highest_rated.eid:
+                        sub.become_subordinate(highest_rated)
 
-                head = highest
+                # Highest rating becomes head of organization
+                highest_rated.become_subordinate(None)
+                # This new head is saved, in order to be returned
+                head = highest_rated
+
             else:
+                # employee being moved is not org. head
+
                 for subordinate in employee.get_direct_subordinates():
+                    # subs of employee become subs of superior of employee
                     subordinate.become_subordinate(old_superior)
 
             employee.become_subordinate(self)
@@ -878,10 +892,6 @@ class Organization:
 
         if head.eid == superior_id:
             employee.become_subordinate(head)
-            return
-
-        if self._head.eid == superior_id:
-            employee.become_subordinate(self._head)
             return
 
         superior = self._head.get_employee(superior_id)

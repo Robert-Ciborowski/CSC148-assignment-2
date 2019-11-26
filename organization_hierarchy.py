@@ -837,10 +837,12 @@ class Organization:
         >>> o.get_employee(2) is None
         True
         """
-        if self.get_head() is None:
+        head = self.get_head()
+        if head is None:
             return None
-
-        return self.get_head().get_employee(eid)
+        if head.eid == eid:
+            return head
+        return head.get_employee(eid)
 
     def add_employee(self, employee: Employee, superior_id: int = None) -> None:
         """Add <employee> to this organization as the subordinate of the

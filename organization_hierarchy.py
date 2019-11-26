@@ -171,12 +171,12 @@ class Employee:
         'Sue Perior'
         """
         ans = []
-
-        if not self._subordinates:
+        subs = self.get_direct_subordinates()
+        if not subs:
             return []
 
         else:
-            for sub in self._subordinates:
+            for sub in subs:
                 ans = merge(ans, [sub])
                 ans = merge(ans, sub.get_all_subordinates())
 
@@ -193,7 +193,7 @@ class Employee:
         >>> e1.get_organization_head().name
         'Bigg Boss'
         """
-        top_employee = self._superior
+        top_employee = self.get_superior()
 
         if top_employee is None:
             top_employee = self
@@ -238,8 +238,8 @@ class Employee:
         >>> e2.get_direct_subordinates()
         []
         """
-        if self._superior is not None:
-            self._superior.remove_subordinate_id(self.eid)
+        if self.get_superior() is not None:
+            self.get_superior().remove_subordinate_id(self.eid)
 
         self._superior = superior
 
@@ -317,7 +317,7 @@ class Employee:
         if self.eid == eid:
             return self
 
-        for subordinate in self._subordinates:
+        for subordinate in self.get_direct_subordinates():
             if subordinate.eid == eid:
                 return subordinate
 
@@ -353,10 +353,10 @@ class Employee:
         if self.salary > amount:
             ans.append(self)
 
-        if not self._subordinates:
+        if not self.get_direct_subordinates():
             return ans
 
-        for sub in self._subordinates:
+        for sub in self.get_direct_subordinates():
             ans = merge(ans, sub.get_employees_paid_more_than(amount))
 
         return ans
@@ -405,7 +405,7 @@ class Employee:
         # organization:
         # if self._superior is None:
 
-        return self._superior.get_closest_common_superior(eid)
+        return self.get_superior().get_closest_common_superior(eid)
 
     # === TASK 2 ===
     def get_department_name(self) -> str:
@@ -423,7 +423,7 @@ class Employee:
         if isinstance(self, Leader):
             return self.get_department_name()
 
-        superior = self._superior
+        superior = self.get_superior()
 
         while superior is not None:
             if isinstance(superior, Leader):
@@ -452,13 +452,13 @@ class Employee:
         'CEO, Company'
         """
         return_string = self.position
-        superior = self._superior
+        superior = self.get_superior()
 
         while superior is not None:
             if isinstance(superior, Leader):
                 return_string += ', ' + superior.get_department_name()
 
-            superior = superior._superior
+            superior = superior.get_superior()
 
         return return_string
 
@@ -486,7 +486,7 @@ class Employee:
         if isinstance(self, Leader):
             return self
 
-        superior = self._superior
+        superior = self.get_superior()
 
         while superior is not None:
             if isinstance(superior, Leader):
@@ -543,27 +543,6 @@ class Employee:
         new_employee.become_subordinate(new_leader)
 
         return new_leader.get_organization_head()
-        # code rekt in merge pt 2
-        # leader = self.get_department_leader()
-        #
-        # if leader is None or leader == self:
-        #     return self
-        #
-        # old_leader_superior = leader.get_superior()
-        # department_name = leader.get_department_name()
-        # new_lead = self.become_leader(department_name)
-        #
-        # if new_lead._superior is not None:
-        #     new_lead._superior.remove_subordinate_id(new_lead.eid)
-        #
-        # if old_leader_superior is not None:
-        #     old_leader_superior.remove_subordinate_id(leader.eid)
-        #     new_lead.become_subordinate(old_leader_superior)
-        # else:
-        #     new_lead._superior = None
-        #
-        # leader.become_subordinate(new_lead)
-        # return new_lead
 
     def become_leader(self, department_name: str) -> Leader:
         """ Creates a Leader version of this employee and replaces this employee
@@ -646,8 +625,8 @@ class Employee:
         >>> e3.get_direct_subordinates()[0] is new_e1
         True
         """
-        old_superior = self._superior
-        super_superior = old_superior._superior
+        old_superior = self.get_superior()
+        super_superior = old_superior.get_superior()
         old_superior.remove_subordinate_id(self.eid)
 
         if isinstance(self, Leader):
@@ -740,7 +719,6 @@ class Employee:
                 highest_rated.become_subordinate(None)
                 # This new head is saved, in order to be returned
                 head = highest_rated
-
             else:
                 # employee being moved is not org. head
 
@@ -856,10 +834,10 @@ class Organization:
         >>> o.get_employee(2) is None
         True
         """
-        if self._head is None:
+        if self.get_head() is None:
             return None
 
-        return self._head.get_employee(eid)
+        return self.get_head().get_employee(eid)
 
     def add_employee(self, employee: Employee, superior_id: int = None) -> None:
         """Add <employee> to this organization as the subordinate of the
@@ -894,7 +872,7 @@ class Organization:
             employee.become_subordinate(head)
             return
 
-        superior = self._head.get_employee(superior_id)
+        superior = head.get_employee(superior_id)
         employee.become_subordinate(superior)
 
     def get_average_salary(self, position: Optional[str] = None) -> float:
@@ -907,7 +885,7 @@ class Organization:
 
         >>> o = Organization()
         >>> o.get_average_salary()
-        0
+        0.0
         >>> e1 = Employee(1, "Emma Ployee", "Worker", 10000, 50)
         >>> e2 = Leader(2, "Sue Perior", "Manager", 20000, 30, "Department")
         >>> o.add_employee(e2)
@@ -915,22 +893,22 @@ class Organization:
         >>> o.get_average_salary()
         15000.0
         """
-        if self._head is None:
-            return 0
+        if self.get_head() is None:
+            return 0.0
 
         # This uses a helper method to get the total salary and the number of
         # employees as lst[0] and lst[1].
-        lst = _get_average_salary_helper(self._head, position)
+        lst = _get_average_salary_helper(self.get_head(), position)
 
         if lst[1] == 0:
-            return 0
+            return 0.0
         else:
             return lst[0] / lst[1]
 
     def get_next_free_id(self) -> int:
         """Gets the next unused id. The returned id > 0.
         """
-        taken_ids = self._get_ids_of_subordinates(self._head)
+        taken_ids = self._get_ids_of_subordinates(self.get_head())
         count = 1
 
         while True:
@@ -951,7 +929,7 @@ class Organization:
 
         return subordinate_ids
 
-    def get_employees_with_position(self, position: str) -> List[str]:
+    def get_employees_with_position(self, position: str) -> List[Employee]:
         """Returns all subordinates, as well as this employee, in a list
         such that the employees in the list hold the passed in position.
         The employees in the returned list are sorted by id.
@@ -959,13 +937,13 @@ class Organization:
         lst = []
 
         # This adds subordinates to lst.
-        for subordinate in self._head.get_all_subordinates():
+        for subordinate in self.get_head().get_all_subordinates():
             if subordinate.position == position:
                 lst.append(subordinate)
 
         # This adds self to lst.
-        if self._head.position == position:
-            lst = merge(lst, [self._head])
+        if self.get_head().position == position:
+            lst = merge(lst, [self.get_head()])
 
         return lst
 
@@ -988,7 +966,7 @@ class Organization:
         Pre-condition: there is an employee with the eid <eid> in
         this organization.
         """
-        employee = self._head.get_employee(eid)
+        employee = self.get_head().get_employee(eid)
         superior = employee.get_superior()
 
         if superior is None:
@@ -1014,7 +992,7 @@ class Organization:
 
         Precondition: head is not None.
         """
-        employee = _fire_lowest_rated_employee_helper(self._head)
+        employee = _fire_lowest_rated_employee_helper(self.get_head())
         self.fire_employee(employee.eid)
 
     def fire_under_rating(self, rating: int) -> None:
@@ -1023,7 +1001,7 @@ class Organization:
         Employees should be fired in order of increasing rating: the lowest
         rated employees are to be removed first. Breaks ties in order of eid.
         """
-        employees = _get_employees_under_rating(self._head, rating)
+        employees = _get_employees_under_rating(self.get_head(), rating)
 
         for employee in employees:
             # changed to employee.eid from employee
@@ -1068,7 +1046,7 @@ class Organization:
         Precondition: There is an employee in self.current_organization with
         eid <eid>.
         """
-        employee = self._head.get_employee(eid)
+        employee = self.get_head().get_employee(eid)
         superior = employee.get_superior()
 
         # This continuously swaps up our employee until we no longer need to.
@@ -1174,8 +1152,8 @@ class Leader(Employee):
         >>> e3.get_position_in_hierarchy()
         'CEO, Company'
         """
-        return_string = self.position + ', ' + self._department_name
-        superior = self._superior
+        return_string = self.position + ', ' + self.get_department_name()
+        superior = self.get_superior()
 
         while superior is not None:
             if isinstance(superior, Leader):
@@ -1200,15 +1178,16 @@ class Leader(Employee):
         """
         employee = Employee(self.eid, self.name, self.position, self.salary,
                             self.rating)
+        superior = self.get_superior()
 
-        if self._superior is not None:
-            self._superior.remove_subordinate_id(self.eid)
-            employee.become_subordinate(self._superior)
+        if superior is not None:
+            superior.remove_subordinate_id(self.eid)
+            employee.become_subordinate(superior)
 
         # This makes a copy of the subordinates list.
         subordinates = []
 
-        for subordinate in self._subordinates:
+        for subordinate in self.get_direct_subordinates():
             subordinates.append(subordinate)
 
         for subordinate in subordinates:
@@ -1283,57 +1262,43 @@ def create_department_salary_tree(organization: Organization) -> \
     15000.0
     """
     head = organization.get_head()
+
     if head is None:
+        # empty Organization
         return None
     if head.get_department_name() == '':
+        # no departments in organization
         return None
     return _get_dept_tree(head)
 
 
 def _get_dept_tree(e: Employee) -> Optional[DepartmentSalaryTree]:
-    """ A helper method which returns a DepartmentSalaryTree when <e> is a
-    leader or None otherwise.
+    """ A helper method which returns a DepartmentSalaryTree from <e> when
+    <e> is a leader or None otherwise.
     """
     if isinstance(e, Leader):
-        subtrees = _dept_tree_helper(e)
         return DepartmentSalaryTree(e.get_department_name(), _get_dept_avg(e),
-                                    subtrees)
+                                    _dept_tree_helper(e))
     else:
         return None
 
 
 def _dept_tree_helper(e: Employee) -> [DepartmentSalaryTree]:
     """ A helper method for _get_dept_tree() that returns a list of DSTs
-    from <e>"""
+    from <e>.
+    """
     subtrees = []
     for sub in e.get_direct_subordinates():
+        # if <sub> is a leader, that sub has their own department
         if isinstance(sub, Leader):
             tree = _get_dept_tree(sub)
             if tree is not None:
                 subtrees.append(tree)
         else:
+            # otherwise, there still may be leaders as non-direct subordinates
+            # of <sub>, so we have to add them
             subtrees += _dept_tree_helper(sub)
     return subtrees
-
-
-def _get_department(e: Leader) -> DepartmentSalaryTree:
-    """A helper method which returns a DepartmentSalaryTree by generating one
-    from the organization leader.
-    """
-    sub_leaders = _get_sub_leaders(e)
-
-    # This checks to see if there are no leaders under this leader.
-    if not sub_leaders:
-        return DepartmentSalaryTree(e.get_department_name(), _get_dept_avg(e),
-                                    [])
-
-    lst = []
-
-    # This adds in the departments of the other leaders.
-    for sub in sub_leaders:
-        lst.append(_get_department(sub))
-
-    return DepartmentSalaryTree(e.get_department_name(), _get_dept_avg(e), lst)
 
 
 def _get_dept_avg(e: Leader) -> float:
@@ -1352,19 +1317,6 @@ def _get_dept_avg(e: Leader) -> float:
         capital += emp.salary
 
     return capital / len(lst2)
-
-
-def _get_sub_leaders(e: Leader) -> List[Leader]:
-    """This returns the leaders which are subordinates of e.
-    """
-    ans = []
-    subs = e.get_all_subordinates()
-
-    for i in subs:
-        if isinstance(i, Leader):
-            ans.append(i)
-
-    return ans
 
 
 # === TASK 6 ===

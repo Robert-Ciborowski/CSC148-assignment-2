@@ -40,11 +40,14 @@ def test_add_employee_simple() -> None:
     o.add_employee(e1, 2)
     assert o.get_employee(1) is e1
     assert e1.get_superior() is e2
+    e3 = Employee(3, "Bruce Wayne", "Philanthropist", 0, 100)
+    o.add_employee(e3)
+    assert o.get_head() == e3
 
 
 def test_get_average_salary_simple() -> None:
     o = Organization()
-    assert o.get_average_salary() == 0
+    assert o.get_average_salary() == 0.0
     e1 = Employee(1, "Emma Ployee", "Worker", 10000, 50)
     e2 = Employee(2, "Sue Perior", "Manager", 20000, 30)
     o.add_employee(e2)
@@ -107,7 +110,7 @@ def test_get_employees_with_position() -> None:
     o.add_employee(e2, 4)
     o.add_employee(e1, 2)
     o.add_employee(e3, 2)
-    o.add_employee(e5, 2)
+    o.add_employee(e5, 3)
     assert o.get_employees_with_position("Worker") == [e1, e3, e5, e6, e7]
     assert o.get_employees_with_position("Manager") == [e2]
     assert o.get_employees_with_position("CEO") == [e4]
@@ -186,6 +189,7 @@ def test_fire_lowest_rated_employee_mid_tree() -> None:
     o.fire_lowest_rated_employee()
     assert e1.get_direct_subordinates() == [e2, e4, e5]
 
+
 def test_fire_lowest_rated_employee_tie() -> None:
     e1 = Leader(1, "Sarah", "CEO", 500000, 99, "Some Corp.")
     e2 = Employee(2, "Sandra", "Secretary", 20000, 99)
@@ -252,6 +256,21 @@ def test_promote_employee_simple() -> None:
     assert len(o.get_head().get_direct_subordinates()) == 2
     assert o.get_head().get_direct_subordinates()[0].eid == 1
     assert o.get_head().get_direct_subordinates()[1].eid == 2
+
+
+def test_get_next_free_id() -> None:
+    dans = Organization()
+    dans.add_employee(Employee(1, 'Dan', 'Iel', 1, 1))
+    dans.add_employee(Employee(2, 'Dan', 'Iel', 1, 1), 1)
+    dans.add_employee(Employee(3, 'Dan', 'Iel', 1, 1), 1)
+    dans.add_employee(Employee(4, 'Dan', 'Iel', 1, 1), 3)
+    dans.add_employee(Employee(6, 'Dan', 'Iel', 1, 1), 3)
+    dans.add_employee(Employee(100, 'Dan', 'Iel', 1, 1), 6)
+    dans.add_employee(Employee(5, 'Dan', 'Iel', 1, 1), 2)
+    dans.add_employee(Employee(8, 'Dan', 'Iel', 1, 1), 100)
+    dans.add_employee(Employee(13, 'Dan', 'Iel', 1, 1), 2)
+    dans.add_employee(Employee(27, 'Dan', 'Iel', 1, 1), 13)
+    assert dans.get_next_free_id() not in [1, 2, 3, 4, 5, 6, 8, 13, 27, 100]
 
 
 if __name__ == '__main__':

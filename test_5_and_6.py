@@ -1,6 +1,5 @@
 from organization_hierarchy import Employee, Leader, \
-    create_organization_from_file, create_department_salary_tree, \
-    Organization, DepartmentSalaryTree
+    create_department_salary_tree, Organization, DepartmentSalaryTree
 
 
 def test_short_create() -> None:
@@ -65,6 +64,22 @@ def test_med_2_create() -> None:
     assert size(d) == 4
 
 
+def test_lead_emp_emp_lead() -> None:
+    o = Organization()
+    leads = create_leaders(4)
+    emps = create_emps(4)
+    o.add_employee(leads[0])
+    o.add_employee(leads[1], 1)
+    o.add_employee(emps[0], 1)
+    o.add_employee(emps[1], 101)
+    o.add_employee(leads[2], 102)
+    o.add_employee(emps[2], 3)
+    o.add_employee(leads[3], 1)
+    tree = create_department_salary_tree(o)
+    assert size(tree) == 4
+    assert tree.department_name == 'Department1'
+
+
 # ignore these below, I thought they make it easier to write tests,
 # but they make it harder to find where test failed
 # nvm don't ignore them completely, I made some useful ones
@@ -80,7 +95,7 @@ def size(d: DepartmentSalaryTree) -> int:
         return ans
 
 
-def create_emp(n: int) -> Leader:
+def create_emp(n: int) -> Employee:
     return Employee(n, 'Name' + str(n), 'Job' + str(n), n * 100, 50)
 
 

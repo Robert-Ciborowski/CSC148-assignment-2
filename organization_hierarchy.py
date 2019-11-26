@@ -467,7 +467,7 @@ class Employee:
     #         While not called by the client_code, this method may be helpful
     #         to you and will be tested. You can (and should) call this in
     #         the other methods that you implement.
-    def get_department_leader(self) -> Optional[Employee]:
+    def get_department_leader(self) -> Optional[Leader]:
         """Return the leader of this Employee's department. If this Employee is
         not in a department, return None.
 
@@ -525,21 +525,40 @@ class Employee:
         if leader is None or leader == self:
             return self
 
-        old_leader_superior = leader.get_superior()
-        department_name = leader.get_department_name()
-        new_lead = self.become_leader(department_name)
+        if not self.get_department_name() or leader == self:
+            return self.get_organization_head()
 
-        if new_lead._superior is not None:
-            new_lead._superior.remove_subordinate_id(new_lead.eid)
+        superior = leader.get_superior()
+        new_leader = self.become_leader(leader.get_department_name())
 
-        if old_leader_superior is not None:
-            old_leader_superior.remove_subordinate_id(leader.eid)
-            new_lead.become_subordinate(old_leader_superior)
-        else:
-            new_lead._superior = None
+        new_leader.become_subordinate(superior)
+        new_employee = leader.become_employee()
+        if superior:
+            superior.remove_subordinate_id(new_employee.eid)
+        new_employee.become_subordinate(new_leader)
 
-        leader.become_subordinate(new_lead)
-        return new_lead
+        return new_leader.get_organization_head()
+        # code rekt in merge pt 2
+        # leader = self.get_department_leader()
+        #
+        # if leader is None or leader == self:
+        #     return self
+        #
+        # old_leader_superior = leader.get_superior()
+        # department_name = leader.get_department_name()
+        # new_lead = self.become_leader(department_name)
+        #
+        # if new_lead._superior is not None:
+        #     new_lead._superior.remove_subordinate_id(new_lead.eid)
+        #
+        # if old_leader_superior is not None:
+        #     old_leader_superior.remove_subordinate_id(leader.eid)
+        #     new_lead.become_subordinate(old_leader_superior)
+        # else:
+        #     new_lead._superior = None
+        #
+        # leader.become_subordinate(new_lead)
+        # return new_lead
 
     def become_leader(self, department_name: str) -> Leader:
         """Creates a Leader version of this employee and replaces this employee

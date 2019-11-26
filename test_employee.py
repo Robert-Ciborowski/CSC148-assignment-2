@@ -306,55 +306,63 @@ def test_get_department_leader() -> None:
     assert e2.get_department_leader().name == 'Sue Perior'
 
 
+# see revised test in test_employee_1.py
 def test_change_department_leader_simple() -> None:
-    e1 = Leader(1, "Sarah", "CEO", 500000, 30, "Some Corp.")
-    e2 = Employee(2, "Sandra", "Secretary", 20000, 30)
-    e3 = Employee(3, "Sofia", "Manager", 25000, 30)
-    e4 = Employee(4, "Senya", "Grunt", 5000, 30)
-    e5 = Employee(5, "Sylvia", "Grunt", 5000, 30)
-    e2.become_subordinate(e1)
-    e3.become_subordinate(e1)
-    e4.become_subordinate(e3)
-    e5.become_subordinate(e3)
-    new_head = e3.change_department_leader()
-    assert new_head.name == "Sofia"
-    assert new_head.get_department_name() == "Some Corp."
-    assert new_head.get_superior() is None
-    subordinates = new_head.get_direct_subordinates()
-    assert subordinates == [e1, e4, e5]
-    assert e1.get_superior() == new_head
-    assert e4.get_superior() == new_head
-    assert e5.get_superior() == new_head
-    subordinates = e1.get_direct_subordinates()
-    assert subordinates == [e2]
-    assert e2.get_superior() == e1
+    assert False
+
+
+#     e1 = Leader(1, "Sarah", "CEO", 500000, 30, "Some Corp.")
+#     e2 = Employee(2, "Sandra", "Secretary", 20000, 30)
+#     e3 = Employee(3, "Sofia", "Manager", 25000, 30)
+#     e4 = Employee(4, "Senya", "Grunt", 5000, 30)
+#     e5 = Employee(5, "Sylvia", "Grunt", 5000, 30)
+#     e2.become_subordinate(e1)
+#     e3.become_subordinate(e1)
+#     e4.become_subordinate(e3)
+#     e5.become_subordinate(e3)
+#     new_head = e3.change_department_leader()
+#     assert new_head.name == "Sofia"
+#     assert new_head.get_department_name() == "Some Corp."
+#     assert new_head.get_superior() is None
+#     subordinates = new_head.get_direct_subordinates()
+#     assert subordinates == [e1, e4, e5]
+#     assert e1.get_superior() == new_head
+#     assert e4.get_superior() == new_head
+#     assert e5.get_superior() == new_head
+#     subordinates = e1.get_direct_subordinates()
+#     assert subordinates == [e2]
+#     assert e2.get_superior() == e1
 
 
 def test_change_department_leader_advanced() -> None:
-    e1 = Leader(1, "Sarah", "CEO", 500000, 30, "Some Corp.")
-    e2 = Employee(2, "Sandra", "Secretary", 20000, 30)
-    e3 = Leader(3, "Sofia", "Manager", 25000, 30, "Grunts Department")
-    e4 = Employee(4, "Senya", "Grunt Alpha", 15000, 30)
-    e5 = Employee(5, "Sylvia", "Grunt Beta", 10000, 30)
-    e6 = Employee(6, "Scarlett", "Grunt Gamma", 5000, 30)
-    e7 = Employee(7, "Samantha", "Grunt Epsilon", 2500, 30)
-    e2.become_subordinate(e1)
-    e3.become_subordinate(e1)
-    e4.become_subordinate(e3)
-    e5.become_subordinate(e4)
-    e6.become_subordinate(e5)
-    e7.become_subordinate(e6)
-    new_head = e6.change_department_leader()
-    assert new_head.name == "Scarlett"
-    assert new_head.get_department_name() == "Grunts Department"
-    assert new_head.get_superior() == e1
-    subordinates = new_head.get_direct_subordinates()
-    assert subordinates == [e3, e7]
-    assert e3.get_superior() == new_head
-    assert e7.get_superior() == new_head
-    subordinates = e3.get_direct_subordinates()
-    assert subordinates == [e4]
-    assert e4.get_superior() == e3
+    # see revised test in test_employee_1.py
+    assert False
+
+
+#     e1 = Leader(1, "Sarah", "CEO", 500000, 30, "Some Corp.")
+#     e2 = Employee(2, "Sandra", "Secretary", 20000, 30)
+#     e3 = Leader(3, "Sofia", "Manager", 25000, 30, "Grunts Department")
+#     e4 = Employee(4, "Senya", "Grunt Alpha", 15000, 30)
+#     e5 = Employee(5, "Sylvia", "Grunt Beta", 10000, 30)
+#     e6 = Employee(6, "Scarlett", "Grunt Gamma", 5000, 30)
+#     e7 = Employee(7, "Samantha", "Grunt Epsilon", 2500, 30)
+#     e2.become_subordinate(e1)
+#     e3.become_subordinate(e1)
+#     e4.become_subordinate(e3)
+#     e5.become_subordinate(e4)
+#     e6.become_subordinate(e5)
+#     e7.become_subordinate(e6)
+#     new_head = e6.change_department_leader()
+#     assert new_head.name == "Scarlett"
+#     assert new_head.get_department_name() == "Grunts Department"
+#     assert new_head.get_superior() == e1
+#     subordinates = new_head.get_direct_subordinates()
+#     assert subordinates == [e3, e7]
+#     assert e3.get_superior() == new_head
+#     assert e7.get_superior() == new_head
+#     subordinates = e3.get_direct_subordinates()
+#     assert subordinates == [e4]
+#     assert e4.get_superior() == e3
 
 
 def test_get_highest_rated_subordinate_simple() -> None:

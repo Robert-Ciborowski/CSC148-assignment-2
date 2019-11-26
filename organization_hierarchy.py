@@ -594,6 +594,8 @@ class Employee:
         employee = None
 
         for subordinate in self.get_direct_subordinates():
+            # note that since subs are returned by increasing eid, ties
+            # are broken by lower eid
             if subordinate.rating > highest_rating:
                 highest_rating = subordinate.rating
                 employee = subordinate
@@ -866,7 +868,7 @@ class Organization:
                 head.become_subordinate(employee)
             self.set_head(employee)
             return
-        
+
         if head.eid == superior_id:
             employee.become_subordinate(head)
             return
@@ -972,7 +974,7 @@ class Organization:
             # This runs only if the employee being fired is the organization
             # head.
             superior = employee.get_highest_rated_subordinate()
-            employee.remove_subordinate_id(superior.eid)
+            # employee.remove_subordinate_id(superior.eid)
             superior.become_subordinate(None)
 
             for sub in employee.get_direct_subordinates():
@@ -1130,7 +1132,7 @@ class Leader(Employee):
         # From piazza: If you call ceo.get_department_employees() (assuming
         # the ceo is the leader of the whole company/head of the
         # organization), you would get back a list containing every single
-        # employee/leader (including the ceo themself) in sorted order by eid.
+        # employee/leader (including the ceo themselves) in sorted order by eid.
         return merge(self.get_all_subordinates(), [self])
 
     def get_position_in_hierarchy(self) -> str:

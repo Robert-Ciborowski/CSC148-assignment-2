@@ -155,6 +155,25 @@ def test_fire_employee_new_head() -> None:
     assert e5.get_superior() == head
 
 
+def test_fire_employee_new_head_2() -> None:
+    e1 = Leader(1, "Sarah", "CEO", 500000, 30, "Some Corp.")
+    e2 = Employee(2, "Sandra", "Secretary", 20000, 40)
+    e3 = Employee(3, "Sofia", "Manager", 25000, 30)
+    e4 = Employee(4, "Senya", "Grunt", 5000, 30)
+    e5 = Employee(5, "Sylvia", "Grunt", 5000, 40)
+    o = Organization()
+    o.add_employee(e1)
+    o.add_employee(e2, 1)
+    o.add_employee(e3, 1)
+    o.add_employee(e4, 3)
+    o.add_employee(e5, 3)
+    o.fire_employee(1)
+    head = o.get_head()
+    assert head.eid == 2
+    assert head.get_direct_subordinates() == [e3]
+    assert e3.get_superior() == head
+
+
 def test_fire_lowest_rated_employee_basic() -> None:
     e1 = Leader(1, "Sarah", "CEO", 500000, 99, "Some Corp.")
     e2 = Employee(2, "Sandra", "Secretary", 20000, 89)
@@ -188,6 +207,8 @@ def test_fire_lowest_rated_employee_mid_tree() -> None:
     o.add_employee(e5, 3)
     o.fire_lowest_rated_employee()
     assert e1.get_direct_subordinates() == [e2, e4, e5]
+    assert e4.get_superior() == e1
+    assert e5.get_superior() == e1
 
 
 def test_fire_lowest_rated_employee_tie() -> None:
@@ -204,6 +225,8 @@ def test_fire_lowest_rated_employee_tie() -> None:
     o.add_employee(e5, 3)
     o.fire_lowest_rated_employee()
     assert e1.get_direct_subordinates() == [e2, e4, e5]
+    assert e4.get_superior() == e1
+    assert e5.get_superior() == e1
 
 
 def test_fire_lowest_employee_new_head() -> None:
@@ -212,15 +235,18 @@ def test_fire_lowest_employee_new_head() -> None:
     e3 = Employee(3, "Sofia", "Manager", 25000, 89)
     e4 = Employee(4, "Senya", "Grunt", 5000, 89)
     e5 = Employee(5, "Sylvia", "Grunt", 5000, 89)
+    e6 = Employee(6, "Savannah", "Wedding Officiate", 5000, 50)
     o = Organization()
     o.add_employee(e1)
     o.add_employee(e2, 1)
     o.add_employee(e3, 1)
     o.add_employee(e4, 3)
     o.add_employee(e5, 3)
+    o.add_employee(e6, 2)
     o.fire_lowest_rated_employee()
     assert o.get_head().eid == 2
-    assert o.get_head().get_direct_subordinates() == [e3]
+    assert o.get_head().get_direct_subordinates() == [e3, e6]
+    assert e3.get_superior() == e2
 
 
 def test_fire_under_rating_simple() -> None:
@@ -236,7 +262,78 @@ def test_fire_under_rating_simple() -> None:
     o.add_employee(e4, 3)
     o.add_employee(e5, 3)
     o.fire_under_rating(99)
+    assert o.get_head() == e1
     assert e1.get_direct_subordinates() == [e2]
+
+
+def test_fire_under_rating_advanced() -> None:
+    e1 = Leader(1, "Sarah", "CEO", 500000, 10, "Some Corp.")
+    e2 = Employee(2, "Sandra", "Secretary", 20000, 20)
+    e3 = Employee(3, "Sofia", "Manager", 25000, 30)
+    e4 = Employee(4, "Senya", "Grunt", 5000, 40)
+    e5 = Employee(5, "Sylvia", "Grunt", 5000, 50)
+    o = Organization()
+    o.add_employee(e1)
+    o.add_employee(e2, 1)
+    o.add_employee(e3, 1)
+    o.add_employee(e4, 2)
+    o.add_employee(e5, 3)
+    o.fire_under_rating(35)
+    assert o.get_head() == e5
+    assert e5.get_direct_subordinates() == [e4]
+    assert e4.get_superior() == e5
+
+
+def test_fire_under_rating_advanced_2() -> None:
+    e1 = Leader(1, "Sarah", "CEO", 500000, 10, "Some Corp.")
+    e2 = Employee(2, "Sandra", "Secretary", 20000, 20)
+    e3 = Employee(3, "Sofia", "Manager", 25000, 30)
+    e4 = Employee(4, "Senya", "Grunt", 5000, 40)
+    e5 = Employee(5, "Sylvia", "Grunt", 5000, 50)
+    e6 = Employee(6, 'Savanahh', 'Stayin', 5000, 39)
+    o = Organization()
+    o.add_employee(e1)
+    o.add_employee(e2, 1)
+    o.add_employee(e3, 1)
+    o.add_employee(e4, 2)
+    o.add_employee(e6, 3)
+    o.add_employee(e5, 6)
+    o.fire_under_rating(40)
+    assert o.get_head() == e4
+    assert e4.get_direct_subordinates() == [e5]
+    assert e5.get_superior() == e4
+
+
+def test_fire_under_tie_simple() -> None:
+    e1 = Employee(1, '', '', 10, 10)
+    e2 = Employee(2, '', '', 10, 20)
+    e3 = Employee(3, '', '', 10, 20)
+    o = Organization()
+    o.add_employee(e1)
+    o.add_employee(e3, 1)
+    o.add_employee(e2, 1)
+    o.fire_under_rating(20)
+    assert o.get_head() == e2
+    assert e2.get_direct_subordinates() == [e3]
+    assert e3.get_superior() == e2
+
+
+def test_fire_under_tie_advanced() -> None:
+    e1 = Employee(1, '', '', 10, 10)
+    e2 = Employee(2, '', '', 10, 10)
+    e3 = Employee(3, '', '', 10, 20)
+    e4 = Employee(4, '', '', 10, 10)
+    e5 = Employee(5, '', '', 10, 20)
+    o = Organization()
+    o.add_employee(e1)
+    o.add_employee(e5, 1)
+    o.add_employee(e2, 5)
+    o.add_employee(e4, 1)
+    o.add_employee(e3, 4)
+    o.fire_under_rating(20)
+    assert o.get_head() == e5
+    assert e5.get_direct_subordinates() == [e3]
+    assert e3.get_superior() == e5
 
 
 def test_promote_employee_simple() -> None:

@@ -720,8 +720,6 @@ class Employee:
 
                 # Highest rating becomes head of organization
                 highest_rated.become_subordinate(None)
-                # This new head is saved, in order to be returned
-                head = highest_rated
             else:
                 # employee being moved is not org. head
 
@@ -730,6 +728,8 @@ class Employee:
                     subordinate.become_subordinate(old_superior)
 
             employee.become_subordinate(self)
+            # The head of the organization is saved, in order to be returned
+            head = self.get_organization_head()
 
         return head
 

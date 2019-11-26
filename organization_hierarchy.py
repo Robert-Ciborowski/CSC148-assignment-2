@@ -527,11 +527,6 @@ class Employee:
             # is already the leader
             return self.get_organization_head()
 
-        # if not self.get_department_name() or leader == self:
-        #     # nothing happens because there is no department or because self
-        #     # is already the leader
-        #     return self.get_organization_head()
-
         old_lead_superior = old_leader.get_superior()
         new_leader = self.become_leader(old_leader.get_department_name())
         new_employee = old_leader.become_employee()
@@ -976,7 +971,6 @@ class Organization:
             # This runs only if the employee being fired is the organization
             # head.
             superior = employee.get_highest_rated_subordinate()
-            # employee.remove_subordinate_id(superior.eid)
             superior.become_subordinate(None)
 
             for sub in employee.get_direct_subordinates():
@@ -1038,8 +1032,6 @@ class Organization:
             return_list.append(employee_dict[eid])
 
         return return_list
-
-        # self.fire_employee(employee.eid)
 
     def promote_employee(self, eid: int) -> None:
         """Promote the employee with the eid <eid> in self.current_organization
@@ -1389,7 +1381,7 @@ if __name__ == "__main__":
 
     import python_ta
 
-    python_ta.check_all(config={
-        'allowed-import-modules': ['python_ta', 'doctest', 'typing',
-                                   '__future__'],
-        'max-args': 7})
+    # python_ta.check_all(config={
+    #     'allowed-import-modules': ['python_ta', 'doctest', 'typing',
+    #                                '__future__'],
+    #     'max-args': 7})

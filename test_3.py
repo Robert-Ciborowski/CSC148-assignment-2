@@ -31,6 +31,34 @@ def test_obtain_employees() -> None:
     assert e2.get_superior() == e4
     assert e5.get_superior() == e4
 
+
+def test_line_obtain_subs() -> None:
+    o = Organization()
+    e1 = Employee(1, '', '', 1, 1)
+    o.add_employee(e1)
+    e2 = Employee(2, '', '', 1, 1)
+    o.add_employee(e2, 1)
+    e3 = Employee(3, '', '', 1, 1)
+    o.add_employee(e3, 1)
+    e4 = Employee(4, '', '', 1, 1)
+    o.add_employee(e4, 3)
+    e5 = Employee(5, '', '', 1, 1)
+    o.add_employee(e5, 4)
+    assert e2 in e1.get_direct_subordinates()
+    assert e3 in e1.get_direct_subordinates()
+    assert not e5 in e1.get_direct_subordinates()
+    assert e5 in e1.get_all_subordinates()
+    assert len(e2.get_all_subordinates()) == 0
+    e2.obtain_subordinates([3, 4])
+    assert not e3 in e1.get_direct_subordinates()
+    assert e2 in e1.get_direct_subordinates()
+    assert e3 in e2.get_direct_subordinates()
+    assert e4 in e2.get_direct_subordinates()
+    assert e5 in e1.get_direct_subordinates()
+    assert e3 in e2.get_direct_subordinates()
+    assert e4 in e2.get_direct_subordinates()
+
+
 if __name__ == '__main__':
     import pytest
 

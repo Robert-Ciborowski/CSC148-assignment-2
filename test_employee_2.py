@@ -210,7 +210,7 @@ def test_get_dept_emp() -> None:
     e4.become_subordinate(e)
     e5 = Leader(6, 'Name6', 'Pos4', 10000, 50, 'SmallDept2')
     e5.become_subordinate(e2)
-    assert len(e.get_department_employees()) == 4
+    assert len(e.get_department_employees()) == 6
 
 # stolen tests
 

@@ -526,18 +526,20 @@ class Employee:
             return self
 
         old_leader_superior = leader.get_superior()
+        department_name = leader.get_department_name()
+        new_lead = self.become_leader(department_name)
 
-        if self._superior is not None:
-            self._superior.remove_subordinate_id(self.eid)
+        if new_lead._superior is not None:
+            new_lead._superior.remove_subordinate_id(new_lead.eid)
 
         if old_leader_superior is not None:
             old_leader_superior.remove_subordinate_id(leader.eid)
-            self.become_subordinate(old_leader_superior)
+            new_lead.become_subordinate(old_leader_superior)
         else:
-            self._superior = None
+            new_lead._superior = None
 
-        leader.become_subordinate(self)
-        return self
+        leader.become_subordinate(new_lead)
+        return new_lead
 
     def become_leader(self, department_name: str) -> Leader:
         """Creates a Leader version of this employee and replaces this employee
@@ -700,36 +702,21 @@ class Employee:
             if old_superior is None:
                 # The employee being moved is the organization head. A new head
                 # needs to be found.
-                head = head.get_highest_rated_subordinate()
-                head = head.swap_up()
-                employee = head.get_employee(eid)
-                old_superior = head
+                highest = head.get_highest_rated_subordinate()
+                head.remove_subordinate_id(highest.eid)
+                highest._superior = None
 
-            for subordinate in employee.get_direct_subordinates():
-                subordinate.become_subordinate(old_superior)
+                for subordinate in head.get_direct_subordinates():
+                    subordinate.become_subordinate(highest)
+
+                head = highest
+            else:
+                for subordinate in employee.get_direct_subordinates():
+                    subordinate.become_subordinate(old_superior)
 
             employee.become_subordinate(self)
 
         return head
-
-    # should only be in Leader
-    # def get_department_employees(self):
-    #     """ Docstring """
-    #
-    #     # tested
-    #
-    #     # not really recursive, could be made better
-    #     ans = [self]
-    #     for sub in self._subordinates:
-    #         if not isinstance(sub, Leader):
-    #             ans = merge(ans, [sub])
-    #             subs = sub.get_all_subordinates()
-    #             sub_subs = []
-    #             for sub2 in subs:
-    #                 if isinstance(sub2, Leader):
-    #                     sub_subs.append(sub2)
-    #             ans = merge(ans, sub_subs)
-    #     return ans
 
 
 def _get_average_salary_helper(employee: Employee,
@@ -972,15 +959,20 @@ class Organization:
         if superior is None:
             # This runs only if the employee being fired is the organization
             # head.
-            superior = employee.get_highest_rated_subordinate().swap_up()
-            employee = superior.get_employee(eid)
+            superior = employee.get_highest_rated_subordinate()
+            employee.remove_subordinate_id(superior.eid)
+            superior.become_subordinate(None)
+
+            for sub in employee.get_direct_subordinates():
+                sub.become_subordinate(superior)
+
             self._head = superior
+        else:
+            employee.get_superior().remove_subordinate_id(eid)
 
-        employee.get_superior().remove_subordinate_id(eid)
-
-        # This reassigns the subordinates.
-        for subordinate in employee.get_direct_subordinates():
-            subordinate.become_subordinate(superior)
+            # This reassigns the subordinates.
+            for subordinate in employee.get_direct_subordinates():
+                subordinate.become_subordinate(superior)
 
     def fire_lowest_rated_employee(self) -> None:
         """Fires the employee with the lowest rating.
@@ -1123,14 +1115,11 @@ class Leader(Employee):
         """Returns a list of all employees who are in this leader's department.
         The employees in the list are in order of eid.
         """
-        subs = self.get_all_subordinates()
-        return_list = []
-
-        for sub in subs:
-            if sub.get_department_name() == self._department_name:
-                return_list.append(sub)
-
-        return merge(return_list, [self])
+        # From piazza: If you call ceo.get_department_employees() (assuming
+        # the ceo is the leader of the whole company/head of the
+        # organization), you would get back a list containing every single
+        # employee/leader (including the ceo themself) in sorted order by eid.
+        return merge(self.get_all_subordinates(), [self])
 
     def get_position_in_hierarchy(self) -> str:
         """Returns a string that describes the Employee's position in the
@@ -1292,60 +1281,6 @@ def _dept_tree_helper(e: Employee) -> [DepartmentSalaryTree]:
     return subtrees
 
 
-# def _get_employee_depttrees(sub: Employee) -> [DepartmentSalaryTree]:
-#     subtrees = []
-#     for sub_sub in sub.get_direct_subordinates():
-#         if isinstance(sub_sub, Leader):
-#             t = _get_dept_tree(sub_sub)
-#             if t:
-#                 subtrees.append(sub_sub)
-#         else:
-#             subtrees += _get_employee_depttrees(sub_sub)
-#     return subtrees
-
-
-# probably old version
-# def _get_department(e: Employee) -> DepartmentSalaryTree:
-#     """ Docstring """
-#     if not _get_sub_leaders(e):
-#         return DepartmentSalaryTree(e.get_department_name(), _get_dept_avg(e),
-#                                     [])
-#     lst = []
-#     for sub in _get_sub_leaders(e):
-#         lst.append(_get_department(sub))
-#     name = e.get_department_name()
-#     return DepartmentSalaryTree(name, _get_dept_avg(e), lst)
-
-
-# I think this is old
-# def _get_dept_avg(e: Employee) -> float:
-#     """ Docstring """
-#     lst = e.get_department_leader().get_department_employees()
-#     capital = 0
-#     for emp in lst:
-#         capital += emp.salary
-#     return capital / len(lst)
-
-
-# probably old
-# def _get_sub_leaders(e: Employee) -> List[Leader]:
-#     """ Docstring """
-#     ans = []
-#     subs = e.get_all_subordinates()
-#     for i in subs:
-#         if isinstance(i, Leader):
-#             ans.append(i)
-#     return ans
-
-# if head is None:
-#     return None
-
-# if head.get_department_name() == '':
-#     return
-
-# return _get_department(head)
-
-
 def _get_department(e: Leader) -> DepartmentSalaryTree:
     """A helper method which returns a DepartmentSalaryTree by generating one
     from the organization leader.
@@ -1370,12 +1305,18 @@ def _get_dept_avg(e: Leader) -> float:
     """This returns the average salary of the leader's department.
      """
     lst = e.get_department_employees()
+    lst2 = []
+
+    for employee in lst:
+        if employee.get_department_name() == e.get_department_name():
+            lst2.append(employee)
+
     capital = 0
 
-    for emp in lst:
+    for emp in lst2:
         capital += emp.salary
 
-    return capital / len(lst)
+    return capital / len(lst2)
 
 
 def _get_sub_leaders(e: Leader) -> List[Leader]:
